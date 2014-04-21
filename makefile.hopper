@@ -89,7 +89,7 @@ $(OBJECT_DIR)/prof_mod.o:       $(SOURCE_DIR)/prof_mod.f $(INCFILES)
                                 $(SOURCE_DIR)/prof_mod.f				
 
 $(OBJECT_DIR)/aorsa3dMain.o:    $(SOURCE_DIR)/aorsa3dMain.F $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3dMain.o \
+	                        $(COMPILEg) -DUSE_HPL -o $(OBJECT_DIR)/aorsa3dMain.o \
                                 $(SOURCE_DIR)/aorsa3dMain.F
 
 $(OBJECT_DIR)/aorsaSubs.o:      $(SOURCE_DIR)/aorsaSubs.f $(INCFILES)
