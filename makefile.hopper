@@ -1,0 +1,148 @@
+# Name:     makefile
+# Function: Provides the make utility with instructions for
+#           compiling the aorsa3d code into an executable module.
+# Date:     10/25/2002
+# Revised:
+
+# Macro definitions
+
+ARCH = hopper
+
+HOME = /global/homes/t/tsujii
+
+CODEDIR = aorsa3d/04-15-03_AORSA3D_NEWLAB3_SCALAPACK
+
+EXEC = xaorsa3d.$(ARCH)
+
+SOURCE_DIR = $(HOME)/$(CODEDIR)/src
+
+INCLUDE_DIR = $(HOME)/$(CODEDIR)/src
+
+OBJECT_DIR = $(HOME)/$(CODEDIR)/obj/$(ARCH)
+
+OBJFILES = \
+ $(OBJECT_DIR)/kron3_mod.o \
+ $(OBJECT_DIR)/prof_mod.o \
+ $(OBJECT_DIR)/aorsa3dMain.o \
+ $(OBJECT_DIR)/aorsaSubs.o \
+ $(OBJECT_DIR)/sigma.o \
+ $(OBJECT_DIR)/zfunction.o \
+ $(OBJECT_DIR)/ztable.o \
+ $(OBJECT_DIR)/current.o \
+ $(OBJECT_DIR)/wdot.o \
+ $(OBJECT_DIR)/fourier.o \
+ $(OBJECT_DIR)/assert.o \
+ $(OBJECT_DIR)/setupblacs.o \
+ $(OBJECT_DIR)/check.o
+
+INCFILES = $(SOURCE_DIR)/kron3_mod.f
+INCFILES = $(SOURCE_DIR)/prof_mod.f
+
+COMMON_OPTION  = -Msave -I $(INCLUDE_DIR)
+COMMON_OPTION2  = -Mnosave -I $(INCLUDE_DIR)
+
+F77 = ftn -fast -tp barcelona-64 -fastsse -Mr8 -r8 $(COMMON_OPTION)
+      
+F90 = ftn -fast -tp barcelona-64 -fastsse -Mfree -Mr8 -r8 $(COMMON_OPTION)
+
+OPTIMIZATION = 
+
+OPTIMIZATION4 = $(OPTIMIZATION)
+OPTIMIZATIONg =  
+
+F77FLAGS= -c $(OPTIMIZATION)  -I $(INCLUDE_DIR) 
+F77FLAGSg=  -c  -R abcps \
+	$(OPTIMIZATIONg) -I $(INCLUDE_DIR)
+F77FLAGS4= -c $(OPTIMIZATION4) -I $(INCLUDE_DIR)
+
+COMPILE = $(F77) $(F77FLAGS)
+COMPILE90 = $(F90) $(F77FLAGS) $(INLINE)
+COMPILEg = $(F77) $(F77FLAGSg)
+COMPILE4 = $(F77) $(F77FLAGS4)
+
+HPL_LIB = /global/homes/j/jaegeref/hpl/lib/jaguar_qc/libzhpl.a
+
+#FFT_LIB = /global/homes/j/jaegeref/AORSA2D/libdfftpack_pgf90.a
+LOADFLAGS = 
+LIBS = \
+  $(HPL_LIB) \
+#  $(FFT_LIB) \
+ -L/global/homes/j/jaegeref/pgplot/5.2/cnl2.0_pgi7.2.4/lib -lpgplot 
+
+PERFORMANCE = -L/ccs/home/larkin/xt3/fpmpi/lib -lfpmpi_papi
+
+LOAD = $(F90) $(OPTIMIZATION) $(LOADFLAGS) 
+
+# Compile the program
+
+$(EXEC):          $(OBJFILES)
+	          $(LOAD) -o ./$(EXEC)  $(OBJFILES) $(LIBS)
+
+# Dependencies
+
+$(OBJECT_DIR)/kron3_mod.o:      $(SOURCE_DIR)/kron3_mod.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/kron3_mod.o \
+                                $(SOURCE_DIR)/kron3_mod.f
+				
+$(OBJECT_DIR)/prof_mod.o:       $(SOURCE_DIR)/prof_mod.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/prof_mod.o \
+                                $(SOURCE_DIR)/prof_mod.f				
+
+$(OBJECT_DIR)/aorsa3dMain.o:    $(SOURCE_DIR)/aorsa3dMain.F $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3dMain.o \
+                                $(SOURCE_DIR)/aorsa3dMain.F
+
+$(OBJECT_DIR)/aorsaSubs.o:      $(SOURCE_DIR)/aorsaSubs.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsaSubs.o \
+                                $(SOURCE_DIR)/aorsaSubs.f
+
+$(OBJECT_DIR)/sigma.o:          $(SOURCE_DIR)/sigma.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/sigma.o \
+                                $(SOURCE_DIR)/sigma.f
+                                
+$(OBJECT_DIR)/zfunction.o:      $(SOURCE_DIR)/zfunction.f $(INCFILES)
+	                        $(COMPILE) -o $(OBJECT_DIR)/zfunction.o \
+                                $(SOURCE_DIR)/zfunction.f
+
+$(OBJECT_DIR)/ztable.o:         $(SOURCE_DIR)/ztable.f $(INCFILES)
+	                        $(COMPILE90) -o $(OBJECT_DIR)/ztable.o \
+                                $(SOURCE_DIR)/ztable.f                                
+                                
+$(OBJECT_DIR)/current.o:        $(SOURCE_DIR)/current.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/current.o \
+                                $(SOURCE_DIR)/current.f
+                                
+$(OBJECT_DIR)/wdot.o:           $(SOURCE_DIR)/wdot.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/wdot.o \
+                                $(SOURCE_DIR)/wdot.f                                
+
+$(OBJECT_DIR)/fourier.o:        $(SOURCE_DIR)/fourier.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/fourier.o \
+                                $(SOURCE_DIR)/fourier.f
+                                
+$(OBJECT_DIR)/assert.o:         $(SOURCE_DIR)/assert.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/assert.o \
+                                $(SOURCE_DIR)/assert.f
+                                
+$(OBJECT_DIR)/descinit.o:       $(SOURCE_DIR)/descinit.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/descinit.o \
+                                $(SOURCE_DIR)/descinit.f
+                                                                                                
+$(OBJECT_DIR)/infog2l.o:        $(SOURCE_DIR)/infog2l.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/infog2l.o \
+                                $(SOURCE_DIR)/infog2l.f
+                                
+$(OBJECT_DIR)/pxerbla.o:        $(SOURCE_DIR)/pxerbla.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/pxerbla.o \
+                                $(SOURCE_DIR)/pxerbla.f
+                                
+$(OBJECT_DIR)/setupblacs.o:     $(SOURCE_DIR)/setupblacs.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/setupblacs.o \
+                                $(SOURCE_DIR)/setupblacs.f                                                                                                
+
+$(OBJECT_DIR)/check.o:          $(SOURCE_DIR)/check.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/check.o \
+                                $(SOURCE_DIR)/check.f
+
+
+
