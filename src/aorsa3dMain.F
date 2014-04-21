@@ -50,7 +50,7 @@
 *     ----------------------
       parameter (nmodesmax = 64)
       parameter (mmodesmax = 64)
-      parameter (lmodesmax = 32)
+      parameter (lmodesmax = 64)
 
 
       parameter (nxmx = nmodesmax)
@@ -797,11 +797,11 @@ c <<  input data
 
 
       if (myid.eq.0) then
-         open(unit=15,file='out15',status='new',form='formatted')
-         open(unit=38,file='out38',status='new',form='formatted')
-         open(unit=28,file='out28',status='new',form='formatted')
-         open(unit=29,file='out29',status='new',form='formatted')
-         open(unit=30,file='out30',status='new',form='formatted')
+         open(unit=15,file='out15',status='unknown',form='formatted')
+         open(unit=38,file='out38',status='unknown',form='formatted')
+         open(unit=28,file='out28',status='unknown',form='formatted')
+         open(unit=29,file='out29',status='unknown',form='formatted')
+         open(unit=30,file='out30',status='unknown',form='formatted')
          open(unit=32,file='diagnostic',status='unknown',
      &      form='formatted')
 
