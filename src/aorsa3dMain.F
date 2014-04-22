@@ -1,7 +1,4 @@
       program aorsa3d_stix2
-!efd-begin
-      use prof_mod
-!efd-end
 
 *------------------------------------------------------------------------------
 *     This version (4/01/03: newlab3) does not solve equations for the points
@@ -568,11 +565,6 @@ c        integer, dimension(:,:,:), allocatable :: mask2
 
       integer indxg2p, indxl2g
       external indxg2p, indxl2g
-
-
-!efd-begin
-      call profinit()
-!efd-end
 
       open(unit=63, file='aorsa3d.in',
      &          status='old', form='formatted')
@@ -3160,16 +3152,11 @@ c        enddo
       do ni=1,isize_all(myrow,mycol)
         row(1:org_ncol) = Btmp(ni,1:org_ncol)
 
-
-        call profstart('convert3d_row')
-
         call convert3d_row_kron( row, rowk,
      &    nnodex,nnodey,nnodephi,
      &    nkx1,nkx2, nky1,nky2, nphi1,nphi2,
      &    inv_xx_t, inv_yy_t,inv_zz_t,
      &    xmax, ymax, phimax, dx,dy, dphi)
-
-        call profend('convert3d_row')
 
 
 *       -----------------------------------------
@@ -3185,8 +3172,6 @@ c        enddo
 *       -------------------------
 *       ready to copy into p_amat
 *       -------------------------
-        call profstart('copy to p_amat')
-
         if (use_Btmp_all) then
 
         do icol=0,(npcol-1)
@@ -3199,19 +3184,15 @@ c        enddo
            nja = 1
            descBtmp(:) = descBtmp_all(:,irow,icol)
 
-           call profstart('pcopy: amat')
            call pzgecopy( mm,nn,
      &          Btmp, 1,1, descBtmp,
      &          p_amat, nia,nja,desc_amat )
-           call profend('pcopy: amat')
 
            descbrhs(:) = descbrhs_all(:,irow,icol)
 
-           call profstart('pcopy: brhs')
            call pzgecopy( mm,1,
      &          brhs, 1,1, descbrhs,
      &          p_brhs, nia,1, desc_brhs )
-           call profend('pcopy: brhs')
         enddo
         enddo
 
@@ -3249,24 +3230,18 @@ c        enddo
           nia = niabegin_all(0,icol)
           nja = 1
 
-          call profstart('pcopy: amat')
           call pzgecopy( mm,nn,
      &          Btmp, ib,jb, descBtmp,
      &          p_amat, nia,nja,desc_amat )
-          call profend('pcopy: amat')
 
           ib = 1
           jb = 1+icol
-          call profstart('pcopy: brhs')
           call pzgecopy( mm,1,
      &          brhs,ib,jb,descbrhs,
      &          p_brhs,nia,1,desc_brhs )
-          call profend('pcopy: brhs')
         enddo
 
         endif
-
-        call profend('copy to p_amat')
 
         enddo ! do niastart
 
@@ -4643,13 +4618,6 @@ c     .                                                  k = 1, nnodephi)
  1394 format(9x, 'i', 6x, 'R', 9x, 'Re Ex', 7x, 'Im Ex',
      1                         7x, 'Re Ey', 7x, 'Im Ey',
      1                         7x, 'Re Ez', 7x, 'Im Ez')
-
-
-!efd-begin
-        if (myid.eq.0) then
-          call profstat()
-        endif
-!efd-end
 
 *     -------------------------
 *     stop parallel environment

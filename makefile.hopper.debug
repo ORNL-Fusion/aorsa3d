@@ -6,7 +6,7 @@
 
 # Macro definitions
 
-ARCH = hopper
+ARCH = hopper.debug
 
 HOME = /global/homes/t/tsujii
 
@@ -39,9 +39,9 @@ INCFILES = $(SOURCE_DIR)/kron3_mod.f
 COMMON_OPTION  = -Msave -I $(INCLUDE_DIR)
 COMMON_OPTION2  = -Mnosave -I $(INCLUDE_DIR)
 
-F77 = ftn -fast -tp barcelona-64 -fastsse -Mr8 -r8 $(COMMON_OPTION)
+F77 = ftn -g -Mr8 -r8 $(COMMON_OPTION)
       
-F90 = ftn -fast -tp barcelona-64 -fastsse -Mfree -Mr8 -r8 $(COMMON_OPTION)
+F90 = ftn -g -Mfree -Mr8 -r8 $(COMMON_OPTION)
 
 OPTIMIZATION = 
 
@@ -49,8 +49,7 @@ OPTIMIZATION4 = $(OPTIMIZATION)
 OPTIMIZATIONg =  
 
 F77FLAGS= -c $(OPTIMIZATION)  -I $(INCLUDE_DIR) 
-F77FLAGSg=  -c  -R abcps \
-	$(OPTIMIZATIONg) -I $(INCLUDE_DIR)
+F77FLAGSg= -c  -R abcps $(OPTIMIZATIONg) -I $(INCLUDE_DIR)
 F77FLAGS4= -c $(OPTIMIZATION4) -I $(INCLUDE_DIR)
 
 COMPILE = $(F77) $(F77FLAGS)
