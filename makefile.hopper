@@ -40,7 +40,7 @@ COMMON_OPTION  = -Msave -I $(INCLUDE_DIR)
 COMMON_OPTION2  = -Mnosave -I $(INCLUDE_DIR)
 
 F77 = ftn -fast -tp barcelona-64 -fastsse -Mr8 -r8 $(COMMON_OPTION)
-      
+
 F90 = ftn -fast -tp barcelona-64 -fastsse -Mfree -Mr8 -r8 $(COMMON_OPTION)
 
 OPTIMIZATION = 
@@ -49,8 +49,7 @@ OPTIMIZATION4 = $(OPTIMIZATION)
 OPTIMIZATIONg =  
 
 F77FLAGS= -c $(OPTIMIZATION)  -I $(INCLUDE_DIR) 
-F77FLAGSg=  -c  -R abcps \
-	$(OPTIMIZATIONg) -I $(INCLUDE_DIR)
+F77FLAGSg= -c  -R abcps $(OPTIMIZATIONg) -I $(INCLUDE_DIR)
 F77FLAGS4= -c $(OPTIMIZATION4) -I $(INCLUDE_DIR)
 
 COMPILE = $(F77) $(F77FLAGS)
@@ -138,5 +137,6 @@ $(OBJECT_DIR)/check.o:          $(SOURCE_DIR)/check.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/check.o \
                                 $(SOURCE_DIR)/check.f
 
-
-
+make clean:
+	rm -f *.o *.lst *.mod $(EXEC)
+	rm $(OBJECT_DIR)/*.o

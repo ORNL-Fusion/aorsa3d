@@ -137,5 +137,6 @@ $(OBJECT_DIR)/check.o:          $(SOURCE_DIR)/check.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/check.o \
                                 $(SOURCE_DIR)/check.f
 
-
-
+make clean:
+	rm -f *.o *.lst *.mod $(EXEC)
+	rm $(OBJECT_DIR)/*.o

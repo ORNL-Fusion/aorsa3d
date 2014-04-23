@@ -768,8 +768,8 @@ c <<  input data
       if (myid .eq. 0) then
           write(6,*) 'blacs started: nprow,npcol,nproc ',
      &            nprow,npcol,nproc
-          write(15,*) 'blacs started: nprow,npcol,nproc ',
-     &            nprow,npcol,nproc
+c          write(15,*) 'blacs started: nprow,npcol,nproc ',
+c     &            nprow,npcol,nproc
       endif
 
 
@@ -792,8 +792,8 @@ c <<  input data
          open(unit=15,file='out15',status='unknown',form='formatted')
          open(unit=38,file='out38',status='unknown',form='formatted')
          open(unit=28,file='out28',status='unknown',form='formatted')
-         open(unit=29,file='out29',status='unknown',form='formatted')
-         open(unit=30,file='out30',status='unknown',form='formatted')
+c         open(unit=29,file='out29',status='unknown',form='formatted')
+c         open(unit=30,file='out30',status='unknown',form='formatted')
          open(unit=32,file='diagnostic',status='unknown',
      &      form='formatted')
 
@@ -897,7 +897,7 @@ c-----b2rat=high field value in step function magnetic field (igeom=3)
 c-----curdnx=Amps/meter of toroidal length of antenna in the x direction
 c-----curdny=Amps/meter of toroidal length of antenna in the y direction
 c-----curdnz=Amps/meter of toroidal length of antenna in the z direction
-c-----prinf = total applied RF power
+c-----prfin = total applied RF power
 
 c-----igeom: if(igeom.eq.1)Solovev flux surfaces
 c-----       if(igeom.eq.2)Stellarator flux surfaces
@@ -4627,7 +4627,6 @@ c     .                                                  k = 1, nnodephi)
 
  5002 continue
 
-      stop
       end
 c
 c***************************************************************************
