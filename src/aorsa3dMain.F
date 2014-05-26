@@ -42,12 +42,14 @@
       real acoil, xkh0, xlp, argc, bessk1, bessk0, xk0b, xk1b, xk2b
       real epsl, xk2p, r, angle, sinang, cosang
 
+      real damping, xkperp_cutoff
+
 *     ----------------------
-*     64 x 64 x 64 modes max
+*     80 x 80 x 16 modes max
 *     ----------------------
-      parameter (nmodesmax = 64)
-      parameter (mmodesmax = 64)
-      parameter (lmodesmax = 64)
+      parameter (nmodesmax = 80)
+      parameter (mmodesmax = 80)
+      parameter (lmodesmax = 16)
 
 
       parameter (nxmx = nmodesmax)
@@ -450,7 +452,8 @@ c***  3-D arrays:
      .    nzfun, alim, grad, qavg0, nnodecx, nnodecy, ymax,
      .    alphan, alphate, alphati, ekappa, rwleft, rwright,
      .    nphiant, iexpnd, icurve, xnuomg, psilim, psiant, psiplasm,
-     .    nstrap, iflag_gammab, theta_ant
+     .    nstrap, iflag_gammab, theta_ant,
+     .    damping, xkperp_cutoff
 
 * ------------------------------
 * storage for parallel scalapack
@@ -690,12 +693,12 @@ c        integer, dimension(:,:,:), allocatable :: mask2
       rzoom2 = 0.0
       ibackground = 1
 
-
       alphan = 1.0
       alphate = 1.0
       alphati = 1.0
 
-
+      damping = 0.0
+      xkperp_cutoff = 0.75
 
       psilim =   1.00
       psiant =   0.95
@@ -799,8 +802,8 @@ c         open(unit=30,file='out30',status='unknown',form='formatted')
 
       open(unit=53, file='fields_realSpace', status='unknown',
      .   form='formatted')
-      open(unit=54, file='fields_fourier', status='unknown',
-     .   form='formatted')
+c      open(unit=54, file='fields_fourier', status='unknown',
+c     .   form='formatted')
       end if
 
 
@@ -2762,7 +2765,8 @@ c        enddo
      .                        sigexx, sigexy, sigexz,
      .                        sigeyx, sigeyy, sigeyz,
      .                        sigezx, sigezy, sigezz,
-     .                        iflag_gammab)
+     .                        iflag_gammab, 
+     .                        damping, xkperp_cutoff)
 
 
                            call sigmah_stix(i, j, n, m,
@@ -3695,7 +3699,7 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc, iflag_gammab)
+     .   myid, nproc, iflag_gammab, damping, xkperp_cutoff)
 
 
       call current(xjpx1, xjpy1, xjpz1, nxmx, nymx, nphimx,

@@ -17,7 +17,7 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc, iflag_gammab)
+     .   myid, nproc, iflag_gammab, damping, xkperp_cutoff)
 
 *-----------------------------------------------------------------------
 *     This subroutine calculates the plasma current for a single species
@@ -28,6 +28,7 @@ c
       logical ismine
 
       integer nproc, myid, ngrid, id, iflag_gammab
+      real damping, xkperp_cutoff
       integer  i, j, k, n, m, nphi, lmax, nzfun, ibessel, irnc, icnc
       integer rsrc, csrc, myrow, mycol, nprow, npcol, lrindx, lcindx,
      .   icontxt
@@ -145,7 +146,7 @@ c      zi = cmplx(0.0, 1.0)
      .                        sigxx, sigxy, sigxz,
      .                        sigyx, sigyy, sigyz,
      .                        sigzx, sigzy, sigzz,
-     .                        iflag_gammab)
+     .                        iflag_gammab, damping, xkperp_cutoff)
 
 
                               if (isigma .eq. 0)
