@@ -45,11 +45,11 @@
       real damping, xkperp_cutoff
 
 *     ----------------------
-*     80 x 80 x 16 modes max
+*     80 x 80 x 32 modes max
 *     ----------------------
       parameter (nmodesmax = 80)
       parameter (mmodesmax = 80)
-      parameter (lmodesmax = 16)
+      parameter (lmodesmax = 32)
 
 
       parameter (nxmx = nmodesmax)
@@ -562,10 +562,6 @@ c        integer, dimension(:,:,:), allocatable :: mask2
       integer undefined
       parameter(undefined=-987654321)
 
-#ifdef USE_HPL
-      integer :: hpl_lld, hpl_ineed
-#endif
-
       integer indxg2p, indxl2g
       external indxg2p, indxl2g
 
@@ -754,14 +750,6 @@ c <<  input data
 
       call blacs_gridinit( icontxt, 'row-major', nprow,npcol)
       call blacs_gridinfo( icontxt, nprow, npcol, myrow, mycol)
-
-#ifdef USE_HPL
-*     --------------
-*     initialize hpl
-*     --------------
-      call blacs_barrier( icontxt,'A')
-      call HPL_blacsinit( icontxt )
-#endif
 
 *     ----------------------------------------------------------
 *     simplifying assumption that  all processors can open
@@ -2499,15 +2487,6 @@ c        enddo
       end if
  6839 format('p_amat_dim = ', i10, ' words,   ',
      .       'p_amat_size = ', i5, ' MBytes')
-
-#ifdef USE_HPL
-*      -----------------------------------
-*      let HPL determine the storage needs
-*      -----------------------------------
-       call HPL_matinit( nrow, mb, hpl_lld, hpl_ineed )
-       lld = max(lld,hpl_lld)
-       p_amat_dim = max(p_amat_dim,hpl_ineed)
-#endif
 
       allocate(p_amat(p_amat_dim))
       p_amat(:) = cmplx(0.0,0.0)

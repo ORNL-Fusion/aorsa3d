@@ -6,7 +6,7 @@
 
 # Macro definitions
 
-ARCH = hopper
+ARCH = edison
 
 HOME = /global/homes/t/tsujii
 
@@ -36,12 +36,12 @@ OBJFILES = \
 
 INCFILES = $(SOURCE_DIR)/kron3_mod.f
 
-COMMON_OPTION  = -Msave -I $(INCLUDE_DIR)
-COMMON_OPTION2  = -Mnosave -I $(INCLUDE_DIR)
+COMMON_OPTION  = -save -r8 -i8 -I $(INCLUDE_DIR)
+COMMON_OPTION2  = -r8 -i8 -I $(INCLUDE_DIR)
 
-F77 = ftn -fast -tp barcelona-64 -fastsse -Mr8 -r8 $(COMMON_OPTION)
+F77 = ftn $(COMMON_OPTION)
 
-F90 = ftn -fast -tp barcelona-64 -fastsse -Mfree -Mr8 -r8 $(COMMON_OPTION)
+F90 = ftn $(COMMON_OPTION)
 
 OPTIMIZATION = 
 
@@ -49,7 +49,7 @@ OPTIMIZATION4 = $(OPTIMIZATION)
 OPTIMIZATIONg =  
 
 F77FLAGS= -c $(OPTIMIZATION)  -I $(INCLUDE_DIR) 
-F77FLAGSg= -c  -R abcps $(OPTIMIZATIONg) -I $(INCLUDE_DIR)
+F77FLAGSg= -c $(OPTIMIZATIONg) -I $(INCLUDE_DIR)
 F77FLAGS4= -c $(OPTIMIZATION4) -I $(INCLUDE_DIR)
 
 COMPILE = $(F77) $(F77FLAGS)
@@ -61,9 +61,7 @@ COMPILE4 = $(F77) $(F77FLAGS4)
 LOADFLAGS = 
 LIBS = \
 #  $(FFT_LIB) \
- -L/global/homes/j/jaegeref/pgplot/5.2/cnl2.0_pgi7.2.4/lib -lpgplot 
-
-PERFORMANCE = -L/ccs/home/larkin/xt3/fpmpi/lib -lfpmpi_papi
+ -L/global/homes/j/jaegeref/pgplot/5.2/cnl2.0_ifort/pgplot -lpgplot 
 
 LOAD = $(F90) $(OPTIMIZATION) $(LOADFLAGS) 
 
@@ -95,8 +93,8 @@ $(OBJECT_DIR)/zfunction.o:      $(SOURCE_DIR)/zfunction.f $(INCFILES)
                                 $(SOURCE_DIR)/zfunction.f
 
 $(OBJECT_DIR)/ztable.o:         $(SOURCE_DIR)/ztable.f $(INCFILES)
-	                        $(COMPILE90) -o $(OBJECT_DIR)/ztable.o \
-                                $(SOURCE_DIR)/ztable.f                                
+	                        $(COMPILE90) -free -o $(OBJECT_DIR)/ztable.o \
+                                $(SOURCE_DIR)/ztable.f
                                 
 $(OBJECT_DIR)/current.o:        $(SOURCE_DIR)/current.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/current.o \
