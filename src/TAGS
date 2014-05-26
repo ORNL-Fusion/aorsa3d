@@ -1,0 +1,108 @@
+
+aorsaSubs.f,527
+      subroutine deriv_x(4,81
+      subroutine deriv_y(33,909
+      subroutine deriv_xy(61,1736
+      subroutine deriv_phi(85,2309
+      subroutine deriv_xphi(109,2901
+      subroutine deriv_yphi(137,3539
+      subroutine torint(164,4176
+      SUBROUTINE ZFUN(209,5269
+      SUBROUTINE AEXPAN(298,7951
+      SUBROUTINE Z2P(345,9036
+      complex function disp(356,9296
+      complex function disp1(371,9602
+      subroutine zzdisp(385,9870
+      subroutine wzdisp(408,10434
+      real function second1(473,11671
+
+assert.f,24
+	subroutine assert(1,0
+
+check.f,97
+      subroutine checkx(5,82
+      subroutine checky(97,2637
+      subroutine checkz(189,5192
+
+current.f,72
+      subroutine current_elect(5,82
+      subroutine current(238,7683
+
+descinit.f,31
+      SUBROUTINE DESCINIT(1,0
+
+fourier.f,547
+	subroutine convert3d_row_kron(4,33
+      subroutine sft3d_kron(194,5013
+      subroutine fftinv3d_kron(365,9201
+      subroutine sft3d(526,13351
+      subroutine convert3d_row(590,15029
+      subroutine fftmat3d(694,18273
+      subroutine fftinv3d(747,19749
+      subroutine sftinv2d(807,21535
+      subroutine sftinv2dp(844,22507
+      subroutine sft(908,24225
+      subroutine sftinv(935,24941
+      subroutine fft(960,25551
+      subroutine fftinv(985,26121
+      subroutine fftinvr(1012,26693
+      subroutine four1(1041,27350
+
+infog2l.f,30
+      SUBROUTINE INFOG2L(1,0
+
+kron3_mod.f,78
+	subroutine zgemm(7,56
+	subroutine kron3(22,387
+	subroutine kron2(211,4443
+
+pxerbla.f,30
+      SUBROUTINE PXERBLA(1,0
+
+setupblacs.f,33
+      SUBROUTINE SETUPBLACS(1,0
+
+sigma.f,501
+       subroutine sigmah_stix_elect(4,81
+       subroutine sigmah_stix(211,5616
+      subroutine sigmac_stix(402,10634
+      subroutine besiexp(509,13370
+      subroutine bes_asym(562,14831
+      SUBROUTINE BESIC 590,15535
+      function fzeta 757,21200
+      subroutine b2slci 879,24125
+      subroutine uliber 1322,38725
+      function bessi(1378,40784
+      function bessi0(1417,41877
+      function bessi1(1450,42952
+      function bessk0 1484,44038
+      function bessk1 1516,45091
+
+wdot.f,207
+      subroutine wl_fst2(4,81
+      subroutine wl_fst(152,3995
+      subroutine estix(277,7172
+      subroutine besiexp2(330,8411
+      subroutine bes_asymp(384,9954
+      subroutine fluxavg(413,10721
+
+zfunction.f,207
+      subroutine z_table(7,88
+      subroutine z_approx(63,1441
+      subroutine z_approx0(124,2894
+      subroutine z2pole(161,3916
+      subroutine z_smithe(175,4274
+      subroutine dgrat1(258,6152
+
+ztable.f,331
+      SUBROUTINE ZTABLE_ZFUNC(31,1023
+      SUBROUTINE GET_ZFUNC_TABLE(108,4892
+      SUBROUTINE ZTABLE_ZFUNC_PARTS(131,5788
+      SUBROUTINE ZTABLE_VALUE(152,6805
+      SUBROUTINE ZTABLE_SETUP(231,9806
+      SUBROUTINE ZTABLE_READ272,10875
+      SUBROUTINE ZTABLE_WRITE327,12212
+      SUBROUTINE ZTABLE_INTEGRAL(426,15505
+
+aorsa3dMain.F,41
+        subroutine pzgecopy(4617,157692
