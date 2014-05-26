@@ -468,18 +468,9 @@ c***  3-D arrays:
       integer            p_amat_dim, p_brhs_dim, p_ipiv_dim
       integer            p_amat_size
 
-
-
-
-      parameter( p_brhs_dim = nmodesmax * mmodesmax * lmodesmax * 3)
-      parameter( p_ipiv_dim = p_brhs_dim)
-
-
-
-
-      complex,        allocatable::p_amat(:)
-      complex         p_brhs(p_brhs_dim)
-      integer         p_ipiv(p_ipiv_dim)
+      complex, allocatable :: p_amat(:)
+      complex, allocatable :: p_brhs(:)
+      integer, allocatable :: p_ipiv(:)
 
       real err_max,err,b_nrm2,err_nrm2
 
@@ -746,9 +737,11 @@ c <<  input data
 *     n x 1 processor grid would simplify eqnx,eqny,eqnz
 *     sqrt(n) x sqrt(n) normally would give best performance
 *     -------------------------------------------------------
+      if (myid .eq. 0) then
+         write(6,*) "setting up processor grid"
+      end if
 
-
-      call blacs_gridinit( icontxt, 'row-major', nprow,npcol)
+      call blacs_gridinit( icontxt, 'column-major', nprow,npcol)
       call blacs_gridinfo( icontxt, nprow, npcol, myrow, mycol)
 
 *     ----------------------------------------------------------
@@ -2488,8 +2481,18 @@ c        enddo
  6839 format('p_amat_dim = ', i10, ' words,   ',
      .       'p_amat_size = ', i5, ' MBytes')
 
-      allocate(p_amat(p_amat_dim))
+*     ----------------------------------------
+*     allocate storage for scalapack matrices
+*     ----------------------------------------
+
+      allocate( p_amat(p_amat_dim) )
       p_amat(:) = cmplx(0.0,0.0)
+
+      p_brhs_dim = nrow
+      p_ipiv_dim = nrow
+      allocate( p_brhs(p_brhs_dim), p_ipiv(p_ipiv_dim) )
+      p_brhs(:) = cmplx(0.0,0.0)
+      p_ipiv(:) = 0
 
 
       call descinit( desc_amat, nrow,ncol, mb,nb, 0,0, icontxt,
@@ -4601,6 +4604,10 @@ c     .                                                  k = 1, nnodephi)
  1394 format(9x, 'i', 6x, 'R', 9x, 'Re Ex', 7x, 'Im Ex',
      1                         7x, 'Re Ey', 7x, 'Im Ey',
      1                         7x, 'Re Ez', 7x, 'Im Ez')
+
+
+      deallocate( p_brhs )
+      deallocate( p_ipiv )
 
 *     -------------------------
 *     stop parallel environment
