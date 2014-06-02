@@ -14,7 +14,7 @@ c
      .   sigxx, sigxy, sigxz,
      .   sigyx, sigyy, sigyz,
      .   sigzx, sigzy, sigzz,
-     .   iflag_gammab, damping, xkperp_cutoff)
+     .   iflag_gammab, damping, xkx_cutoff, xky_cutoff)
 
 *     ---------------------------------------------------------
 *     This routine uses the modified Z functions Z0, Z1, Z2
@@ -37,7 +37,7 @@ c
       real xkphi
       real xkalp, xkbet, xk0, rgamma
 
-      real damping, xkperp_cutoff, kr, step
+      real damping, xkx_cutoff, xky_cutoff, kr, step
 
       real uxx, uxy, uxz,
      .     uyx, uyy, uyz,
@@ -176,8 +176,8 @@ c      sig3 = zieps0 * omgp2 / omgrfc
 c      sig4 = 0.0
 c      sig5 = 0.0
 
-      kr = sqrt((xkxsav / xkperp_cutoff)**2 
-     .     + (xkysav / xkperp_cutoff)**2)
+      kr = sqrt((xkxsav / xkx_cutoff)**2 
+     .     + (xkysav / xky_cutoff)**2)
       step = damping * kr**16 / (1. + kr**16)
       sig3 = sig3 * (1.0 + step)
 

@@ -42,7 +42,7 @@
       real acoil, xkh0, xlp, argc, bessk1, bessk0, xk0b, xk1b, xk2b
       real epsl, xk2p, r, angle, sinang, cosang
 
-      real damping, xkperp_cutoff
+      real damping, xkperp_cutoff, xkx_cutoff, xky_cutoff
 
 *     ----------------------
 *     80 x 80 x 32 modes max
@@ -2003,6 +2003,9 @@ c               write(6, 1312)iant, xjymax
          if(m .eq. 0)xkysav(m) = epszet
       end do
 
+      xkx_cutoff = xkxsav(nkx2) * xkperp_cutoff
+      xky_cutoff = xkx_cutoff
+
       if (myid .eq. 0)then
          write(15, 920)
          write(15, 6164)
@@ -2748,7 +2751,7 @@ c        enddo
      .                        sigeyx, sigeyy, sigeyz,
      .                        sigezx, sigezy, sigezz,
      .                        iflag_gammab, 
-     .                        damping, xkperp_cutoff)
+     .                        damping, xkx_cutoff, xky_cutoff)
 
 
                            call sigmah_stix(i, j, n, m,
@@ -3681,7 +3684,7 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc, iflag_gammab, damping, xkperp_cutoff)
+     .   myid, nproc, iflag_gammab, damping, xkx_cutoff, xky_cutoff)
 
 
       call current(xjpx1, xjpy1, xjpz1, nxmx, nymx, nphimx,
