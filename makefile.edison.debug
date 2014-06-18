@@ -22,6 +22,7 @@ OBJECT_DIR = $(HOME)/$(CODEDIR)/obj/$(ARCH)
 
 OBJFILES = \
  $(OBJECT_DIR)/kron3_mod.o \
+ $(OBJECT_DIR)/aorsa3din_mod.o \
  $(OBJECT_DIR)/aorsa3dMain.o \
  $(OBJECT_DIR)/aorsaSubs.o \
  $(OBJECT_DIR)/sigma.o \
@@ -75,6 +76,10 @@ $(EXEC):          $(OBJFILES)
 $(OBJECT_DIR)/kron3_mod.o:      $(SOURCE_DIR)/kron3_mod.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/kron3_mod.o \
                                 $(SOURCE_DIR)/kron3_mod.f
+
+$(OBJECT_DIR)/aorsa3din_mod.o:  $(SOURCE_DIR)/aorsa3din_mod.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3din_mod.o \
+                                $(SOURCE_DIR)/aorsa3din_mod.f
 				
 $(OBJECT_DIR)/aorsa3dMain.o:    $(SOURCE_DIR)/aorsa3dMain.F $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3dMain.o \

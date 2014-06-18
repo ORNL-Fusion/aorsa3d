@@ -14,7 +14,7 @@ c
      .   sigxx, sigxy, sigxz,
      .   sigyx, sigyy, sigyz,
      .   sigzx, sigzy, sigzz,
-     .   iflag_gammab, damping, xkx_cutoff, xky_cutoff)
+     .   iflag_gammab, delta0, xk0, damping, xkx_cutoff, xky_cutoff)
 
 *     ---------------------------------------------------------
 *     This routine uses the modified Z functions Z0, Z1, Z2
@@ -37,7 +37,7 @@ c
       real xkphi
       real xkalp, xkbet, xk0, rgamma
 
-      real damping, xkx_cutoff, xky_cutoff, kr, step
+      real delta0, damping, xkx_cutoff, xky_cutoff, kr, step
 
       real uxx, uxy, uxz,
      .     uyx, uyy, uyz,
@@ -176,6 +176,9 @@ c      sig3 = zieps0 * omgp2 / omgrfc
 c      sig4 = 0.0
 c      sig5 = 0.0
 
+      sig1 = sig1 + delta0 * eps0 * omgrf * xkperp**2 / xk0**2
+      sig3 = sig3 + delta0 * eps0 * omgrf * xkperp**2 / xk0**2
+
       kr = sqrt((xkxsav / xkx_cutoff)**2 
      .     + (xkysav / xky_cutoff)**2)
       step = damping * kr**16 / (1. + kr**16)
@@ -221,7 +224,7 @@ c
      .   sigxx, sigxy, sigxz,
      .   sigyx, sigyy, sigyz,
      .   sigzx, sigzy, sigzz,
-     .   iflag_gammab)
+     .   iflag_gammab, delta0, xk0)
 
 *     ---------------------------------------------------------
 *     This routine uses the modified Z functions Z0, Z1, Z2
@@ -233,6 +236,7 @@ c
 
       integer lmin, lmax, nzfun, lmaxdim, l, labs, ibessel,
      .    i, j, n, m, iflag_gammab
+      real delta0
 
       real xkperp, xkprl, xm, q, xn, xkt, omgc, omgp2, xme
       real xkprl_eff, fgam, y0, sgn_kprl
@@ -369,6 +373,9 @@ c
 
 
       end do
+
+      sig1 = sig1 + delta0 * eps0 * omgrf * xkperp**2 / xk0**2
+      sig3 = sig3 + delta0 * eps0 * omgrf * xkperp**2 / xk0**2
 
 *     -------------------
 *     Swanson's rotation:

@@ -1,4 +1,3 @@
-      program aorsa3d_stix2
 
 *------------------------------------------------------------------------------
 *     This version (4/01/03: newlab3) does not solve equations for the points
@@ -10,46 +9,47 @@
 *     Stix2 frame using SCALAPACK with new faster loading by E. D'Azevedo
 *------------------------------------------------------------------------
 
+      program aorsa3dMain
 
+      use aorsa3din_mod
 
       implicit none
 
-      integer iexpnd, mcap, iflag
-      integer nxmx, nymx, nphimx, idiag, jdiag, kdiag, ieq, jcol
-      integer ndfmax, ier, l, nphiplot, nplot, mplot,
-     1    ninteg, nd, izoom1, izoom2, ndf, nmaxe, irnc
+      integer iflag
+      integer nxmx, nymx, nphimx, ieq, jcol
+      integer ndfmax, ier, l,
+     .    ninteg, nd, izoom1, izoom2, ndf, nmaxe, irnc
       integer nrow, ncol, norder
 
-      integer kplot, kplot1, kplot2, kplot3, kplot4, ndkplot
+      integer kplot1, kplot2, kplot3, kplot4, ndkplot
 
       integer nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2
 
       integer nkx1, nkx2, nldim, nldim3,
      .   nky1, nky2, iant, jant1, jant2,
-     .   nphi1, nphi2, nphiant, icurve
+     .   nphi1, nphi2
 
       real tmem, tsys, tio, ttotal, time0, time, cpu, dummy, second1
       real time1, time2, tmin1, tmin2, dum
-      real tmin, gflops, gflopsp, ops, theta_ant, theta_antr
+      real tmin, gflops, gflopsp, ops, theta_antr
 
       real signb, sqx
 
       real capa, capx, capy, z, hz, coshz, sinhz, r2,
      .    bcapx, bcapy, bcapz, xkh
 
-      integer nmodesmax, mmodesmax, lmodesmax, nrhomax, iflag_gammab
-      integer mhel, lhel, nfp
-      real acoil, xkh0, xlp, argc, bessk1, bessk0, xk0b, xk1b, xk2b
+      integer nmodesmax, mmodesmax, lmodesmax, nrhomax
+      real xkh0, xlp, argc, bessk1, bessk0, xk0b, xk1b, xk2b
       real epsl, xk2p, r, angle, sinang, cosang
 
-      real damping, xkperp_cutoff, xkx_cutoff, xky_cutoff
+      real xkx_cutoff, xky_cutoff
 
 *     ----------------------
-*     80 x 80 x 32 modes max
+*     160 x 160 x 36 modes max
 *     ----------------------
-      parameter (nmodesmax = 80)
-      parameter (mmodesmax = 80)
-      parameter (lmodesmax = 32)
+      parameter (nmodesmax = 160)
+      parameter (mmodesmax = 160)
+      parameter (lmodesmax = 36)
 
 
       parameter (nxmx = nmodesmax)
@@ -239,13 +239,11 @@ c***  3-D arrays:
      .     xkperp, xketa,
      .     ptot, pcito2, pcrto2, powtot, pscale,
      .     cosalp, sinalp, t1, gaussian, frho, q07qa, psimax,
-     .     rhomax, xnprl, psiant, rhoant, gausspsi,
+     .     rhomax, xnprl, rhoant, gausspsi,
      .     dthetant, dphiant, dpsiant, gausstheta,
-     .     gaussthetap, gaussanty, xnuomg
-      real dthetant0, dphiant0, dpsiant0, phiant, xjymax, modxjy
-      real dphase, phiant1, phiant2, phase1, phase2, strap_separ,
-     .     strap_width, phase_diff
-      integer nstrap
+     .     gaussthetap, gaussanty
+      real phiant, xjymax, modxjy
+      real dphase, phiant1, phiant2, phase1, phase2
       complex gaussphi(nphimx)
 
       real ealphakmod(nkdim1 : nkdim2, mkdim1 : mkdim2),
@@ -256,40 +254,21 @@ c***  3-D arrays:
      .     ebetakmod1(lkdim1 : lkdim2),
      .     ebkmod1(lkdim1 : lkdim2)
 
-      integer nmodesx, nmodesy, nmodesphi, nwdot, lmax, ibessel,
-     .    inu, iprint, iexact,
-     .    iroot, iequat, igeom,
-     .    iqx, izfunc, iez,
-     .    nstep, nabs,
-     .    isigma, itemp,
-     .    nfreqm,  nkzm,
-     .    idens,  ibackground, iabsorb,
-     .    nzfun, nnodecx, nnodecy, nnodecphi, nnodex, nnodey,
-     .    nnodephi, i, j, k,
+      integer nnodex, nnodey, nnodephi, i, j, k,
      .    jequat, liw, lw, nrhs, icenter, np
 
       integer nnoderho
 
       integer n, m, nphi
 
-      real ti0, xnuead, xnu1ad, xnu2ad, xant, te0,
-     .     delta0, xwall, xnwall,
-     .    epszet, amu1, amu2, z1, z2, eta, btor,
-     .    b0, rt, awally, awallz, xnurf, aplasm, xnlim, signbz,
-     .    xn0, flat, b1rat, b2rat, curdnx, curdny, curdnz,
-     .    xnuabs, xbnch, xleft, xright, awright,
-     .    telim, tilim, psiplasm, rhoplasm, alphan, alphate, alphati,
-     .    dfreq,  dkz, reomg1, reomg2, reomg3,
-     .    r0, xnudip, adip, efold,
-     .    amu3, z3, eta3, xnu3ad,
-     .    xdelta, wdelta, xdelt2, wdelt2, zeffcd,
-     .    rzoom1, rzoom2, q0, prfin,
-     .    alim, grad, qavg0, ymax, phimax,
-     .    rhonorm, ekappa, xiota0, rholim, psilim, yant, psi1,
-     .    rwleft, rwright, xwleft, xwright, psiright,
-     .    psi_lim, phistart
+      real xant, btor, awallz, awright, rhoplasm,
+     .    reomg1, reomg2, reomg3,
+     .    phimax,
+     .    rhonorm, xiota0, rholim, psi1,
+     .    xwleft, xwright, psiright,
+     .    psi_lim
       real dxdrho(nxmx, nymx), dzdrho(nxmx, nymx)
-      real xkphi, xktau, xkrho, rant, xkphi0, xnphi, xnphi0
+      real xkphi, xktau, xkrho, xkphi0, xnphi, xnphi0
       real rplasm, rlim
 
       real xkthrho, wphase, vsound, domgk, xkthdx, omgestar, rhoi10,
@@ -430,31 +409,6 @@ c***  3-D arrays:
 
       common/sigcom/zi, eps0, v0i, omgrf
 
-
-      namelist/aorsa3din/nmodesx, nmodesy, nmodesphi, nwdot, lmax,
-     .    ibessel, mhel, lhel, acoil, kplot, nphiplot, mcap,
-     .    idiag, jdiag, kdiag,
-     .    dthetant0, dphiant0, dpsiant0,
-     .    ti0, xnuead, xnu1ad, xnu2ad, rant, te0, yant,
-     .    inu, iprint, iexact, delta0, xwall, xnwall,
-     .    iroot, iequat, igeom, epszet, phistart,
-     .    iqx, izfunc, iez, nprow, npcol,
-     .    amu1, amu2, z1, z2, eta,
-     .    b0, rt, awally, xnurf, aplasm, xnlim, signbz,
-     .    xn0, flat, b1rat, b2rat, curdnx, curdny, curdnz,
-     .    nstep, nabs, xnuabs, xbnch, xleft, xright,
-     .    isigma, itemp, telim, tilim,
-     .    nfreqm, dfreq, nkzm, dkz,
-     .    idens, r0, xnudip, adip, efold,
-     .    amu3, z3, eta3, xnu3ad,
-     .    xdelta, wdelta, xdelt2, wdelt2, zeffcd,
-     .    rzoom1, rzoom2, ibackground, iabsorb, q0, prfin,
-     .    nzfun, alim, grad, qavg0, nnodecx, nnodecy, ymax,
-     .    alphan, alphate, alphati, ekappa, rwleft, rwright,
-     .    nphiant, iexpnd, icurve, xnuomg, psilim, psiant, psiplasm,
-     .    nstrap, iflag_gammab, theta_ant,
-     .    damping, xkperp_cutoff
-
 * ------------------------------
 * storage for parallel scalapack
 * ------------------------------
@@ -485,7 +439,7 @@ c***  3-D arrays:
       character*4 suffix
 
       integer mb,nb,myid,nproc,wantnproc,myrow,mycol
-      integer nprow,npcol,icontxt, wantnprocs
+      integer icontxt, wantnprocs
       integer lrindx,lcindx,rsrc,csrc,ipos,ii,jj
       integer desc_amat(dlen_), desc_brhs(dlen_)
 
@@ -559,138 +513,6 @@ c        integer, dimension(:,:,:), allocatable :: mask2
       open(unit=63, file='aorsa3d.in',
      &          status='old', form='formatted')
       rewind(63)
-
-*     ---------------------------------
-*     set default values of input data:
-*     ---------------------------------
-
-
-      theta_ant = 0.0
-      iflag_gammab = 1
-      icurve = 0
-      iexpnd = 1
-      nprow = 8
-      npcol = 8
-      lhel = 2
-      mhel = 12
-      mcap = 0
-      acoil = 0.46
-      kplot = 1
-      idiag = 5
-      jdiag = 5
-      kdiag = 5
-      nphiplot = 4
-      nphiant = 24
-      nstrap = 1
-      nplot = 1
-      mplot = 1
-      dthetant0 = 40.
-      dphiant0 = 5.0
-      dpsiant0 = .02
-      nmodesx = nmodesmax
-      nmodesy = mmodesmax
-      nmodesphi = lmodesmax
-      nwdot = 0
-      nnodecx = nmodesmax
-      nnodecy = mmodesmax
-      nnodecphi = lmodesmax
-      lmax = 5
-      ibessel = 1
-      ti0 = 7.0700E+03
-      xnuead = 0.0000E+00
-      xnu1ad = 0.0000E+00
-      xnu2ad = 0.0000E+00
-      rant = 1.6
-      yant = .1
-      te0 = 4.2900E+03
-      inu = 0
-      iprint = 50
-      iexact = 1
-      delta0 = 0.0000E+00
-      xwall = 0.0000E+00
-      xnwall = 0.0000E+00
-      iroot = 2
-      iequat = 1
-      igeom = 2
-      epszet = 1.0000E-08
-      phistart = 0.0
-      iqx = 4
-      izfunc = 1
-      iez = 0
-      amu1 = 2.0000E+00
-      amu2 = 1.0000E+00
-      z1 = 1.0000E+00
-      z2 = 1.0000E+00
-      eta = 4.5000E-01
-      b0 = 2.0
-      q0 = 1.0
-      rt = 2.1
-      ekappa = 1.5
-      rwleft =.70
-      rwright = 2.5
-      awally = 7.0000E-01
-      ymax = 0.0
-      xnurf = 3.2000E+07
-      aplasm = 7.0000E-01
-      alim = 100.0
-      grad = 0.0
-      xnlim = 0.0000E+00
-      signbz = 1.0000E+00
-      xn0 = 3.1100E+19
-      flat = 0.0000E+00
-      b1rat = 7.0000E-01
-      b2rat = 1.3000E+00
-      curdnx = 0.0000E+00
-      curdny = 1.0
-      curdnz = 0.0000E+00
-      prfin = 0.0
-      nstep  = 16
-      nabs = 2
-      xnuabs = 0.0000E+00
-      xbnch = 0.0000E+00
-      xleft = -7.000E-01
-      xright = 7.0000E-01
-      isigma = 1
-      nzfun = 1
-      xnuomg = 0.0
-      qavg0 = 1.0
-      iabsorb = 2
-      itemp = 0
-      telim = 0.0000E+00
-      tilim = 0.0000E+00
-      nfreqm = 1
-      dfreq = 0.0000E+00
-      nkzm = 1
-      dkz = 0.0000E+00
-      idens = 0
-      r0 = 2.3000E+00
-      xnudip = 2.5000E+00
-      adip = 0.0000E+00
-      efold = 0.0000E+00
-      amu3 = 1.2000E+01
-      z3 = 6.0000E+00
-      eta3 = 4.6600E-02
-      xnu3ad = 0.0000E+00
-      xdelta = 5.5000E-01
-      wdelta = 0.0000E+00
-      xdelt2 = -7.000E-02
-      wdelt2 = 0.0000E+00
-      zeffcd = 2.5000E+00
-      rzoom1 = 0.0
-      rzoom2 = 0.0
-      ibackground = 1
-
-      alphan = 1.0
-      alphate = 1.0
-      alphati = 1.0
-
-      damping = 0.0
-      xkperp_cutoff = 0.75
-
-      psilim =   1.00
-      psiant =   0.95
-      psiplasm = 0.60
-
 
 !       --------------------------
 !       determine points in plasma
@@ -778,13 +600,13 @@ c     &            nprow,npcol,nproc
          open(unit=28,file='out28',status='unknown',form='formatted')
 c         open(unit=29,file='out29',status='unknown',form='formatted')
 c         open(unit=30,file='out30',status='unknown',form='formatted')
-         open(unit=32,file='diagnostic',status='unknown',
-     &      form='formatted')
+c         open(unit=32,file='diagnostic',status='unknown',
+c     &      form='formatted')
 
       open(unit=53, file='fields_realSpace', status='unknown',
      .   form='formatted')
-c      open(unit=54, file='fields_fourier', status='unknown',
-c     .   form='formatted')
+      open(unit=54, file='fields_fourier', status='unknown',
+     .   form='formatted')
       end if
 
 
@@ -793,164 +615,9 @@ c     .   form='formatted')
       nrhs = 1
       nmaxe=1
 
-c-----theta_ant = poloidal angle at which the antenna sits (degrees)
-c           if(theta_ant .eq. 0.) antenna is on low field side or right (default)
-c           if(theta_ant .eq. 180.) antenna is on high field side or left
 
 
-c-----iflag_gammab = flag controlling the sign of gammab (parallel gradient parameter)
-c           if(iflag_gammab .eq. 0) parallel gradient of B is set to zero
-c           if(iflag_gammab .eq. 1) parallel gradient of B is non-zero(default)
-
-c-----nmodesx=number of modes used in the x direction
-c-----nmodesy=number of modes used in the y direction
-c-----nmodesphi=number of modes used in the phi direction
-c-----nwdot=number of radial modes used in wdot and flow (fy) calculation
-c-----nnodecx = number of radial mesh points used for wdot calculation
-c-----nnodecy = number of vertical mesh points used for wdot calculation
-
-c-----ibessel=flag determining whether or not to expand ion Bessel functions
-c           if(ibessel.eq.1) Full Bessel functions and exponential are used
-c           if(ibessel.eq.2) Exact 2nd order expansion from finite difference
-c                            code is used
-c           if(ibessel.eq.3) 2nd order Larmor radius expansion of Bessel
-c                            functions is used with exponential = 1.0
-
-c-----lmax = highest order Bessel function kept in plasma conductivity
-c-----ti0=central value of ion temperature in eV
-c-----nuead=ad hoc collision frequency for electron in sec-1
-c-----nu1ad=ad hoc collision frequency for majority ions in sec-1
-c-----nu2ad=ad hoc collision frequency for minority ions in sec-1
-c-----rant = major radius of antenna in meters
-c-----yant = half height of antenna in meters
-c-----te0=central value of eletron temperature in eV
-
-c-----inu:   if(inu.eq.0)real collisions are left out
-c-----iprint:  output is printed every iprint grid points
-c-----iexact:  if (iexact.eq.1) full sixth order equation is solved
-c-----         if (iexact.eq.0) approximate second order equation is solved
-c-----delta0=numerical damping for Bernstein wave:  about 1.e-04 (dimensionless)
-c-----xwall = not used
-c-----xnwall = density of metal put on last mesh point
-
-c-----iroot: decides which of the two fast wave roots to follow
-c-----iequat:  if(iequat.eq.1) complete equations are solved
-c-----         if(iequat.eq.2) Fukayama's equations are solved
-
-c
-c-----epszet = value of kx and ky at nx and ny = 0.
-c-----phistart = starting position in phi for VMEC magnetic field
-
-c-----iqx:  if(iqx.eq.1) Vaclavik's  kinetic flux is used
-c-----      if(iqx.eq.2) Romero's  kinetic flux is used
-c-----      if(iqx.eq.3) Jaeger's  kinetic flux is used
-c-----      if(iqx.eq.4) Batchelor's  kinetic flux is used (reduces to WKB)
-c-----izfunc: if(izfunc.eq.1) not used
-c-----        if(izfunc.eq.2) not used
-c-----iez:  if(iez.eq.0) Ez is calculated from complete equation
-c-----      if(iez.eq.1) Ez is set to zero
-
-c-----amu1= ratio of majority ion to hydrogen ion mass
-c-----amu2= ratio of minority ion to hydrogen ion mass
-c-----z1=ratio of majority ion charge to hydrogen ion charge
-c-----z2=ratio of minority ion charge to hydrogen ion charge
-c-----eta=ratio of minority ion density to electron density
-
-
-c-----b0=value of magnetic field at x=0 in Tesla
-c-----q0=value of inverse rotational transform on axis
-c-----rt= major radius of torus
-c-----ekappa = elongation
-c-----rwleft = major radius of the left conducting wall
-c-----rwright = major radius of the right conducting wall
-c-----awally = vertical location of the conducting wall
-c-----ymax = radius in vertical (y) direction- in default it is set to awallx
-c-----xnurf= rf frequency in Hertz
-c-----aplasm= location of the plasma-scrape-off interface
-c-----alim = location of turning point in step function density function
-c-----grad = 0.0 ignors gradients in Wdot (default)
-c-----grad = 1.0 includes gradients in Wdot
-c-----xnlim=electron density in scrape-off region (x>aplasm)
       if(abs(signbz).lt.1.0e-05)signbz = +1.0
-
-c-----xn0=electron density at x=0
-c-----flat=0.0 gives parabolic profiles
-c-----flat=1.0 gives flat profiles
-c-----b1rat= low field value in step function magnetic field (igeom=3)
-c-----b2rat=high field value in step function magnetic field (igeom=3)
-c-----curdnx=Amps/meter of toroidal length of antenna in the x direction
-c-----curdny=Amps/meter of toroidal length of antenna in the y direction
-c-----curdnz=Amps/meter of toroidal length of antenna in the z direction
-c-----prfin = total applied RF power
-
-c-----igeom: if(igeom.eq.1)Solovev flux surfaces
-c-----       if(igeom.eq.2)Stellarator flux surfaces
-c-----       if(igeom.eq.3)Stellarator (expanded) flux surfaces (right handed)
-c-----       if(igeom.eq.4)Stellarator (expanded) flux surfaces (left  handed)
-c-----       if(igeom.eq.5)Stellarator flux surfaces from VMEC
-
-c-----mcap = number of the field period calculated (0 .le. mcap .le. np-1)
-
-
-c-----nstep: determines steepness of step function magnetic field in option igeom=3
-c-----nabs=polynomial coefficient which determines slope of the absorber
-c-----xnuabs=magnitude of absorber used to stop wall reflections in benchmark case.
-c-----xbnch:  abs(x)>xbnch is the artificial absorber region to stop wall reflections
-c        in benchmark case.
-c-----if (xbnch.eq.0.0) it is ignored.
-c-----xleft=left boundary for energy integrals and outgoing energy flux
-c-----xright=right boundary for energy integrals and incoming energy flux
-
-c-----if(iabsorb.eq.1)electron absorption from simple Landau formula
-c-----if(iabsorb.eq.2)electron absorption from  .5 * real(J* dot E) i.e. ECH
-
-c-----if(isigma.eq.0) cold plasma conductivity is used.
-c-----if(isigma.eq.1) hot  plasma conductivity is used (default).
-
-c-----nzfun:  if(nzfun.eq.0) Simple Z function is used from ZFUN
-c-----        if(nzfun.eq.1) Generalized Z function of Brambilla is used (default).
-c-----        if(nzfun.eq.2) Z function of Smithe is used by do numerical integrals.
-c-----        if(nzfun.eq.3) Z function table lookup of Smithe is used
-
-
-c-----qavg0 is the rotational transform on axis
-c-----xnuomg is the collision rate used in hot and cold plasma dielectrics
-
-c-----if(itemp.eq.0)use Gaussian temperature-finite at edge-use with nlim=0 at edge
-c-----if(itemp.eq.1)use Fukuyama's profile for temperature with c=-2 and d=1 -use
-c          with nlim=finite at edge
-c-----if(itemp.eq.2)use Gaussian times 1-r**2/xant**2
-c-----telim=electron temperature in scrape-off region (x>aplasm)
-c-----tilim=ion temperature in scrape-off region (x>aplasm)
-
-c-----nfreqm=number of frequencies run
-c-----dfreq=frequency increment
-c-----nkzm=number of kz's run
-c-----dkz=kz increment
-
-c-----if(idens.eq.0)use parabolic density profile
-c-----if(idens.eq.1)use D'Ippolito density profile
-c-----r0 is parameter r0 in D'Ippolito density profile
-c-----xnudip is parameter nu in D'Ippolito density profile
-c-----adip is parameter nu in D'Ippolito density profile
-c-----efold is the number of e-foldings in density between
-c          plasma edge and awall = awallx
-
-c-----amu3=ratio of third ion mass to hydrogen ion mass
-c-----z3=ratio of third ion charge to hydrogen ion charge
-c-----eta3=ratio of third ion density to electron density
-c-----xnu3ad=ad hoc collision frequency for 3rd ion species
-
-c-----xdelta=center of Gaussian for numerical damping of IBW
-c-----wdelta=width of Gaussian for numerical damping of IBW
-c-----xdelt2=second center of Gaussian for numerical damping of IBW
-c-----wdelt2=second width of Gaussian for numerical damping of IBW
-c-----zeffcd=Zeff for Ehst-Karney current drive calculation
-c-----rzoom1 = R on left side of zoomed plot
-c-----rzoom2 = R on right side of zoomed plot
-c-----ibackground controls color of plotting window and labels
-c-----    For white background set ibackground = 0 (box is black)
-c-----    For black background set ibackground = 1 (box is red)
 
       nkx2 = nmodesx / 2
       nkx1 = - nmodesx / 2 + 1
@@ -1707,10 +1374,6 @@ c     .               / rhonorm
       dphiant  = dphiant0 / 360. * 2.0 * pi
 
       phiant = pi / nfp
-
-      strap_width = 0.1524
-      strap_separ = 0.4572
-      phase_diff = 180.0
 
       dphi_rt = strap_separ / rt
       phiant1 = phiant - dphi_rt / 2.0
@@ -2750,7 +2413,7 @@ c        enddo
      .                        sigexx, sigexy, sigexz,
      .                        sigeyx, sigeyy, sigeyz,
      .                        sigezx, sigezy, sigezz,
-     .                        iflag_gammab, 
+     .                        iflag_gammab, delta0, xk0,
      .                        damping, xkx_cutoff, xky_cutoff)
 
 
@@ -2768,7 +2431,7 @@ c        enddo
      .                        sig1xx, sig1xy, sig1xz,
      .                        sig1yx, sig1yy, sig1yz,
      .                        sig1zx, sig1zy, sig1zz,
-     .                        iflag_gammab)
+     .                        iflag_gammab, delta0, xk0)
 
 
                            if(eta2 .ne. 0.0)
@@ -2786,7 +2449,7 @@ c        enddo
      .                        sig2xx, sig2xy, sig2xz,
      .                        sig2yx, sig2yy, sig2yz,
      .                        sig2zx, sig2zy, sig2zz,
-     .                        iflag_gammab)
+     .                        iflag_gammab, delta0, xk0)
 
 
                            if(eta3 .ne. 0.0)
@@ -2804,7 +2467,7 @@ c        enddo
      .                        sig3xx, sig3xy, sig3xz,
      .                        sig3yx, sig3yy, sig3yz,
      .                        sig3zx, sig3zy, sig3zz,
-     .                        iflag_gammab)
+     .                        iflag_gammab, delta0, xk0)
 
                         end if ! (isigma.eq.1)
 
@@ -3520,22 +3183,22 @@ c--   Operations for complex matrix factor and solve:
 !       write out solution in Fourier modes
 !       -----------------------------------
 
-c      if (myid .eq.0) then
-c         write(54,309)nkx1,nkx2,nky1,nky2,nphi1,nphi2
-c         write(54,8310) (((ealphak(n,m,nphi),n=nkx1,nkx2),
-c     &             m=nky1,nky2),nphi=nphi1,nphi2)
-c         write(54,8310) (((ebetak(n,m,nphi),n=nkx1,nkx2),
-c     &             m=nky1,nky2),nphi=nphi1,nphi2)
-c         write(54,8310) (((ebk(n,m,nphi),n=nkx1,nkx2),
-c     &             m=nky1,nky2),nphi=nphi1,nphi2)
+      if (myid .eq.0) then
+         write(54,309)nkx1,nkx2,nky1,nky2,nphi1,nphi2
+         write(54,8310) (((ealphak(n,m,nphi),n=nkx1,nkx2),
+     &             m=nky1,nky2),nphi=nphi1,nphi2)
+         write(54,8310) (((ebetak(n,m,nphi),n=nkx1,nkx2),
+     &             m=nky1,nky2),nphi=nphi1,nphi2)
+         write(54,8310) (((ebk(n,m,nphi),n=nkx1,nkx2),
+     &             m=nky1,nky2),nphi=nphi1,nphi2)
 
-c         write(54, 8310)(xkxsav(n), n = nkx1, nkx2)
-c         write(54, 8310)(xkysav(m), m = nky1, nky2)
-c         write(54, 8310)(xkzsav(nphi), nphi=nphi1,nphi2)
+         write(54, 8310)(xkxsav(n), n = nkx1, nkx2)
+         write(54, 8310)(xkysav(m), m = nky1, nky2)
+         write(54, 8310)(xkzsav(nphi), nphi=nphi1,nphi2)
 
-c         close(54)
+         close(54)
 
-c      end if
+      end if
 
 
 
@@ -3684,7 +3347,8 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc, iflag_gammab, damping, xkx_cutoff, xky_cutoff)
+     .   myid, nproc,
+     .   iflag_gammab, delta0, xk0, damping, xkx_cutoff, xky_cutoff)
 
 
       call current(xjpx1, xjpy1, xjpz1, nxmx, nymx, nphimx,
@@ -3702,7 +3366,7 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc, iflag_gammab)
+     .   myid, nproc, iflag_gammab, delta0, xk0)
 
       if(eta2 .ne. 0.0)
      .   call current(xjpx2, xjpy2, xjpz2, nxmx, nymx, nphimx,
@@ -3720,7 +3384,7 @@ c
      .      uzx, uzy, uzz,
      .      myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .      xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .      myid, nproc, iflag_gammab)
+     .      myid, nproc, iflag_gammab, delta0, xk0)
 
 
       if(eta3 .ne. 0.0)
@@ -3739,7 +3403,7 @@ c
      .      uzx, uzy, uzz,
      .      myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .      xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .      myid, nproc, iflag_gammab)
+     .      myid, nproc, iflag_gammab, delta0, xk0)
 
 
       time = second1(dummy) - t1
