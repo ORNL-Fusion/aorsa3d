@@ -51,12 +51,29 @@ c-----      if(iez.eq.1) Ez is set to zero
 
       real :: amu1 = 2.0000E+00           !-----ratio of majority ion to hydrogen ion mass
       real :: amu2 = 1.0000E+00           !-----ratio of minority ion to hydrogen ion mass
+      real :: amu3 = 1.2000E+01           !-----ratio of third ion mass to hydrogen ion mass
       real :: z1 = 1.0000E+00             !-----ratio of majority ion charge to hydrogen ion charge
       real :: z2 = 1.0000E+00             !-----ratio of minority ion charge to hydrogen ion charge
-      real :: eta = 4.5000E-01            !-----ratio of minority ion density to electron density
-      real :: amu3 = 1.2000E+01           !-----ratio of third ion mass to hydrogen ion mass
       real :: z3 = 6.0000E+00             !-----ratio of third ion charge to hydrogen ion charge
+      real :: eta = 4.5000E-01            !-----ratio of minority ion density to electron density
       real :: eta3 = 4.6600E-02           !-----ratio of third ion density to electron density
+      real :: xn0 = 3.1100E+19            !-----electron density at x=0
+      real :: xnlim = 0.0000E+00          !-----electron density in scrape-off region (x>aplasm)
+      real :: te0 = 4.2900E+03            !-----central value of eletron temperature in eV
+      real :: ti0 = 7.0700E+03            !-----central value of ion temperature in eV
+      real :: telim = 0.0000E+00          !-----electron temperature in scrape-off region (x>aplasm)
+      real :: tilim = 0.0000E+00          !-----ion temperature in scrape-off region (x>aplasm)
+      integer :: iprofile = 1             !-----iprofile:  if (iprofile .eq. 1) generic profiles (Gaussian) (default)
+                                          !-----           if (iprofile .eq. 2) generic profiles (parabolas)
+                                          !-----           if (iprofile .eq. 3) fits of form (1 - rho**beta)**alpha
+                                          !-----           if (iprofile .eq. 5) numerical profiles from namelist
+
+      real :: alphan = 1.0
+      real :: alphate = 1.0
+      real :: alphati = 1.0
+      real :: betan = 1.0
+      real :: betate = 1.0
+      real :: betati = 1.0
 
       real :: b0 = 2.0                    !-----value of magnetic field at x=0 in Tesla
       real :: q0 = 1.0                    !-----value of inverse rotational transform on axis
@@ -73,8 +90,6 @@ c-----      if(iez.eq.1) Ez is set to zero
 c-----grad = 0.0 ignors gradients in Wdot (default)
 c-----grad = 1.0 includes gradients in Wdot
 
-      real :: xnlim = 0.0000E+00          !-----electron density in scrape-off region (x>aplasm)
-      real :: xn0 = 3.1100E+19            !-----electron density at x=0
       real :: flat = 0.0000E+00
 c-----flat=0.0 gives parabolic profiles
 c-----flat=1.0 gives flat profiles
@@ -143,10 +158,6 @@ c-----if(itemp.eq.0)use Gaussian temperature-finite at edge-use with nlim=0 at e
 c-----if(itemp.eq.1)use Fukuyama's profile for temperature with c=-2 and d=1 -use
 c          with nlim=finite at edge
 c-----if(itemp.eq.2)use Gaussian times 1-r**2/xant**2
-      real :: te0 = 4.2900E+03            !-----central value of eletron temperature in eV
-      real :: ti0 = 7.0700E+03            !-----central value of ion temperature in eV
-      real :: telim = 0.0000E+00          !-----electron temperature in scrape-off region (x>aplasm)
-      real :: tilim = 0.0000E+00          !-----ion temperature in scrape-off region (x>aplasm)
 
       integer :: nfreqm = 1               !-----number of frequencies run
       real :: dfreq = 0.0000E+00          !-----frequency increment
@@ -191,13 +202,6 @@ c-----    For black background set ibackground = 1 (box is red)
       real :: xkperp_cutoff = 0.75        !  applied above the fractional value of xkperp (xkperp_cutoff) to 
                                           !  short out noise in E_parallel 
 
-      real :: alphan = 1.0
-      real :: alphate = 1.0
-      real :: alphati = 1.0
-      real :: betan = 1.0
-      real :: betate = 1.0
-      real :: betati = 1.0
-
       real :: signbz = 1.0000E+00
 
       real :: psilim = 1.00
@@ -230,6 +234,6 @@ c-----    For black background set ibackground = 1 (box is red)
      .    ekappa, rwleft, rwright,
      .    nphiant, iexpnd, icurve, xnuomg, psilim, psiant, psiplasm,
      .    nstrap, iflag_gammab, theta_ant, strap_width, strap_separ,
-     .    phase_diff, damping, xkperp_cutoff
+     .    phase_diff, damping, xkperp_cutoff, iprofile
 
       end module aorsa3din_mod

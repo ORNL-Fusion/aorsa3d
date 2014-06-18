@@ -42,7 +42,7 @@
       real xkh0, xlp, argc, bessk1, bessk0, xk0b, xk1b, xk2b
       real epsl, xk2p, r, angle, sinang, cosang
 
-      real xkx_cutoff, xky_cutoff
+      real xkx_cutoff, xky_cutoff, xkz_cutoff
 
 *     ----------------------
 *     160 x 160 x 36 modes max
@@ -1470,30 +1470,46 @@ c     .               xjanty * gaussthetap**2 * gausspsi * real(cexpant)
                   xjz(i,j,k) = 0.0
                end if
 
+               if (iprofile .eq. 1) then
+                  gaussian =  exp(-psi(i,j,k) / psiplasm)
 
+                  xnea(i, j, k) = xnlim
+     .                 + (xn0 - xnlim) * gaussian**alphan
 
-               xnea(i, j, k) = xnlim
-               xkte(i,j,k) = telim
-               xkti(i,j,k) = tilim
+                  xkte(i,j,k) = telim
+     .                 + (t0e - telim) * gaussian**alphate
+                  xkti(i,j,k) = tilim
+     .                 + (t0i - tilim) * gaussian**alphati
+               else if (iprofile .eq. 3) then
+                  if (psi(i,j,k) .lt. psiplasm) then
+                     xnea(i,j,k) = (psi(i,j,k) / psiplasm)**betan
+                     xnea(i,j,k) = (1.0 - xnea(i,j,k))**alphan
+                     xnea(i,j,k) = xnlim + (xn0 - xnlim) * xnea(i,j,k)
 
-               gaussian =  exp(-psi(i,j,k) / psiplasm)
+                     xkte(i,j,k) = (psi(i,j,k) / psiplasm)**betate
+                     xkte(i,j,k) = (1.0 - xkte(i,j,k))**alphate
+                     xkte(i,j,k) = telim + (t0e - telim) * xkte(i,j,k)
+                     xkti(i,j,k) = (psi(i,j,k) / psiplasm)**betati
+                     xkti(i,j,k) = (1.0 - xkti(i,j,k))**alphati
+                     xkti(i,j,k) = tilim + (t0i - tilim) * xkti(i,j,k)
+                  else
+                     xnea(i,j,k) = xnlim
+                     xkte(i,j,k) = telim
+                     xkti(i,j,k) = tilim
+                  end if
+               end if
 
-
-               xnea(i, j, k) = xnlim + (xn0 - xnlim) * gaussian**alphan
                xn2a(i, j, k) = xnea(i, j, k) * eta2
                xn3a(i, j, k) = xnea(i, j, k) * eta3
                xn1a(i, j, k) = (xnea(i, j, k)
-     .                        - xn2a(i, j, k) * z2
-     .                        - xn3a(i, j, k) * z3) / z1
-
-               xkte(i,j,k) = telim + (t0e - telim) * gaussian**alphate
-               xkti(i,j,k) = tilim + (t0i - tilim) * gaussian**alphati
+     .              - xn2a(i, j, k) * z2
+     .              - xn3a(i, j, k) * z3) / z1
 
 *               ------------------------------------
 *               determine which points are in plasma
 *               ------------------------------------
-                mask(i,j,k) = 1
-                if (psi(i,j,k).gt.psimask) mask(i,j,k) = 0
+               mask(i,j,k) = 1
+               if (psi(i,j,k).gt.psimask) mask(i,j,k) = 0
 
             end do
          end do
@@ -1666,9 +1682,6 @@ c               write(6, 1312)iant, xjymax
          if(m .eq. 0)xkysav(m) = epszet
       end do
 
-      xkx_cutoff = xkxsav(nkx2) * xkperp_cutoff
-      xky_cutoff = xkx_cutoff
-
       if (myid .eq. 0)then
          write(15, 920)
          write(15, 6164)
@@ -1688,6 +1701,9 @@ c         if(nphi .eq. 0)xkzsav(nphi) = 1.0e-04
          if(myid .eq. 0)write(6,  1312)nphi, xkzsav(nphi)
       end do
 
+      xkx_cutoff = xkxsav(nkx2) * xkperp_cutoff
+      xky_cutoff = xkx_cutoff
+      xkz_cutoff = xkzsav(nphi2) * xkperp_cutoff
 
 *     ---------------------------
 *     Calculate rotation matrix U
@@ -2413,8 +2429,8 @@ c        enddo
      .                        sigexx, sigexy, sigexz,
      .                        sigeyx, sigeyy, sigeyz,
      .                        sigezx, sigezy, sigezz,
-     .                        iflag_gammab, delta0, xk0,
-     .                        damping, xkx_cutoff, xky_cutoff)
+     .                        iflag_gammab, delta0, xk0, damping,
+     .                        xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 
                            call sigmah_stix(i, j, n, m,
@@ -3348,7 +3364,8 @@ c
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
      .   myid, nproc,
-     .   iflag_gammab, delta0, xk0, damping, xkx_cutoff, xky_cutoff)
+     .   iflag_gammab, delta0, xk0, damping,
+     .   xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 
       call current(xjpx1, xjpy1, xjpz1, nxmx, nymx, nphimx,
