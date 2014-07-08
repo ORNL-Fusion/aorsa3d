@@ -16,6 +16,7 @@
       implicit none
 
       integer iflag
+      integer imcap
       integer nxmx, nymx, nphimx, ieq, jcol
       integer ndfmax, ier, l,
      .    ninteg, nd, izoom1, izoom2, ndf, nmaxe, irnc
@@ -205,7 +206,7 @@ c***  3-D arrays:
      .        ebeta(nxmx, nymx, nphimx),
      .        eb(nxmx, nymx, nphimx)
 
-
+      complex ntilda_e(nxmx, nymx, nphimx)
 
 
       complex xx(nkdim1 : nkdim2, 1 : nxmx),
@@ -289,6 +290,8 @@ c***  3-D arrays:
      .   wdoteavg(nrhomax), drho
       real xnavg(nrhomax), qhat, omgte, omgti,
      .     vthe0, vthi0, xnuee, xnuii, xnu7omg
+      real redotjeavg(nrhomax), redotj1avg(nrhomax),
+     .     redotj2avg(nrhomax), redotj3avg(nrhomax)
 
       real vol(nrhomax), fvol(nrhomax)
       real fypavg(nrhomax), fypi1avg(nrhomax), fypi2avg(nrhomax)
@@ -527,7 +530,7 @@ c <<  input data
       jdiag = nmodesy / 2
       kdiag = nmodesphi / 2
 
-
+      if(mcap_number .gt. 1) prfin = 0.0
 
 * --------------------------
 * setup parallel environment
@@ -589,10 +592,11 @@ c     &            nprow,npcol,nproc
       suffix(2:2) = char(ichar('0') + mod( myid/100,10))
 
 
+      if (myid.eq.0) then
+         open(unit=34, file='fpm',status='unknown', form='formatted')	
+      endif
 
-
-
-
+      do 9000 imcap = 1, mcap_number
 
       if (myid.eq.0) then
          open(unit=15,file='out15',status='unknown',form='formatted')
@@ -602,11 +606,10 @@ c         open(unit=29,file='out29',status='unknown',form='formatted')
 c         open(unit=30,file='out30',status='unknown',form='formatted')
 c         open(unit=32,file='diagnostic',status='unknown',
 c     &      form='formatted')
-
-      open(unit=53, file='fields_realSpace', status='unknown',
-     .   form='formatted')
-      open(unit=54, file='fields_fourier', status='unknown',
-     .   form='formatted')
+         open(unit=53, file='fields_realSpace', status='unknown',
+     .        form='formatted')
+c         open(unit=54, file='fields_fourier', status='unknown',
+c     .        form='formatted')
       end if
 
 
@@ -728,7 +731,7 @@ c     signb = 1.0
 
       if(myid .eq. 0)then
          write(6, 7013)nmodesx, nmodesy, nmodesphi
-         write(6, 7114)mcap
+         write(6, 7114)mcap(imcap)
          write(6, 7113)nwdot
          write(6, 7213)nnodecx, nnodecy
          write(6, 7217)qavg0
@@ -767,7 +770,7 @@ c     signb = 1.0
 
          write(15, 162)
          write(15, 7013)nmodesx, nmodesy, nmodesphi
-         write(15, 7114)mcap
+         write(15, 7114)mcap(imcap)
          write(15, 7113)nwdot
          write(15, 7213)nnodecx, nnodecy
          write(15, 7217)qavg0
@@ -829,6 +832,7 @@ c     signb = 1.0
      .                    k = 1, nnodephi)
          read(40, 309) nfp
 
+         close(40)
 
          if(myid .eq. 0)then
             write(6, 1812)rt
@@ -1695,8 +1699,8 @@ c               write(6, 1312)iant, xjymax
       do nphi = nphi1, nphi2
 c         xkzsav(nphi) = 2.0 * pi * nphi / phimax
 c         if(nphi .eq. 0)xkzsav(nphi) = 1.0e-04
-         xkzsav(nphi) = nfp * nphi + mcap
-         if(nphi .eq. 0 .and. mcap .eq. 0)xkzsav(nphi) = epszet
+         xkzsav(nphi) = nfp * nphi + mcap(imcap)
+         if(nphi .eq. 0 .and. mcap(imcap) .eq. 0)xkzsav(nphi) = epszet
          if(myid .eq. 0)write(15, 1312)nphi, xkzsav(nphi)
          if(myid .eq. 0)write(6,  1312)nphi, xkzsav(nphi)
       end do
@@ -3174,8 +3178,8 @@ c--   Operations for complex matrix factor and solve:
      &                 j=1,nnodey),k=1,nnodephi)
          write(53,8310)(((eb(i,j,k),i=1,nnodex),
      &                 j=1,nnodey),k=1,nnodephi)
-         close(53)
 
+         close(53)
       end if
 
  8310 format(1p6e14.6)
@@ -3199,22 +3203,22 @@ c--   Operations for complex matrix factor and solve:
 !       write out solution in Fourier modes
 !       -----------------------------------
 
-      if (myid .eq.0) then
-         write(54,309)nkx1,nkx2,nky1,nky2,nphi1,nphi2
-         write(54,8310) (((ealphak(n,m,nphi),n=nkx1,nkx2),
-     &             m=nky1,nky2),nphi=nphi1,nphi2)
-         write(54,8310) (((ebetak(n,m,nphi),n=nkx1,nkx2),
-     &             m=nky1,nky2),nphi=nphi1,nphi2)
-         write(54,8310) (((ebk(n,m,nphi),n=nkx1,nkx2),
-     &             m=nky1,nky2),nphi=nphi1,nphi2)
+c      if (myid .eq.0) then
+c         write(54,309)nkx1,nkx2,nky1,nky2,nphi1,nphi2
+c         write(54,8310) (((ealphak(n,m,nphi),n=nkx1,nkx2),
+c     &             m=nky1,nky2),nphi=nphi1,nphi2)
+c         write(54,8310) (((ebetak(n,m,nphi),n=nkx1,nkx2),
+c     &             m=nky1,nky2),nphi=nphi1,nphi2)
+c         write(54,8310) (((ebk(n,m,nphi),n=nkx1,nkx2),
+c     &             m=nky1,nky2),nphi=nphi1,nphi2)
 
-         write(54, 8310)(xkxsav(n), n = nkx1, nkx2)
-         write(54, 8310)(xkysav(m), m = nky1, nky2)
-         write(54, 8310)(xkzsav(nphi), nphi=nphi1,nphi2)
+c         write(54, 8310)(xkxsav(n), n = nkx1, nkx2)
+c         write(54, 8310)(xkysav(m), m = nky1, nky2)
+c         write(54, 8310)(xkzsav(nphi), nphi=nphi1,nphi2)
 
-         close(54)
+c         close(54)
 
-      end if
+c      end if
 
 
 
@@ -3346,7 +3350,24 @@ c-----calculate individual species currents in real space on solution mesh:
 c
 
       t1 = second1(dummy)
-
+     
+      call ntilda_(ntilda_e, nxmx, nymx, nphimx,
+     .   xjpx2d, gradprlb,
+     .   nnodex, nnodey, nnodephi,
+     .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
+     .   nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
+     .   xme, qe, xnea, xkte, lmax,
+     .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
+     .   xprime, yprime, phiprime,
+     .   ealphak, ebetak, ebk, capr,
+     .   bxn, byn, bzn, bmod, dx, dy, dphi,
+     .   uxx, uxy, uxz,
+     .   uyx, uyy, uyz,
+     .   uzx, uzy, uzz,
+     .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
+     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
+     .   myid, nproc,
+     .   iflag_gammab)
 
       call current_elect(xjpxe, xjpye, xjpze, nxmx, nymx, nphimx,
      .   xjpx2d, xjpy2d, xjpz2d, gradprlb,
@@ -3644,6 +3665,8 @@ c--   Scale fields and current to Prf, in:
                xjpy3(i,j,k) = xjpy3(i,j,k) * sqrt(pscale)
                xjpz3(i,j,k) = xjpz3(i,j,k) * sqrt(pscale)
 
+               ntilda_e(i,j,k) = ntilda_e(i,j,k) * sqrt(pscale)
+
                redotj(i,j,k) = redotj(i,j,k) * pscale
                pcre(i,j,k) = pcre(i,j,k) * pscale
                pcim(i,j,k) = pcim(i,j,k) * pscale
@@ -3724,11 +3747,19 @@ c-- Integrate individual species Estar dot J on solution mesh:
      .   capr, nxmx, nymx, nphimx)
 
 
-c    [add flux average of edotj here]
-
-
-
-
+c     flux average of Estar dot J
+      call fluxavg(redotje, redotjeavg, rho, nxmx, nymx, nphimx,
+     .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
+     .   dx, dy, dphi, capr, fvol, vol)
+      call fluxavg(redotj1, redotj1avg, rho, nxmx, nymx, nphimx,
+     .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
+     .   dx, dy, dphi, capr, fvol, vol)
+      call fluxavg(redotj2, redotj2avg, rho, nxmx, nymx, nphimx,
+     .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
+     .   dx, dy, dphi, capr, fvol, vol)
+      call fluxavg(redotj3, redotj3avg, rho, nxmx, nymx, nphimx,
+     .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
+     .   dx, dy, dphi, capr, fvol, vol)
 
 c      call sgrator(x, y, wdote, 1, nnodex, 1, nnodey, pe,
 c     .   capr, rt, nxmx, nymx)
@@ -3845,7 +3876,7 @@ c         write(6, 81109)pe, pi1, pi2
  5001 continue
 
 
-c         write(30, 309)mcap
+c         write(30, 309)mcap(imcap)
 c         write(30, 310) (((ex(i, j, k), i = 1, nnodex), j = 1, nnodey),
 c     .                                                  k = 1, nnodephi)
 c         write(30, 310) (((ey(i, j, k), i = 1, nnodex), j = 1, nnodey),
@@ -3854,7 +3885,7 @@ c         write(30, 310) (((ez(i, j, k), i = 1, nnodex), j = 1, nnodey),
 c     .                                                  k = 1, nnodephi)
 
 
-c         write(29, 309)mcap
+c         write(29, 309)mcap(imcap)
 c         write(29, 310) (((xjpx2(i, j, k), i = 1, nnodex),j = 1,nnodey),
 c     .                                                  k = 1, nnodephi)
 c         write(29, 310) (((xjpy2(i, j, k), i = 1, nnodex),j = 1,nnodey),
@@ -3863,13 +3894,13 @@ c         write(29, 310) (((xjpz2(i, j, k), i = 1, nnodex),j = 1,nnodey),
 c     .                                                  k = 1, nnodephi)
 
 
-         write(28, 309)mcap
+         write(28, 309) mcap(imcap)
          write(28, 310) (((psi(i, j, k), i = 1, nnodex),j = 1,nnodey),
      .                                                  k = 1, nnodephi)
          write(28, 310) (((bmod(i, j, k), i = 1, nnodex),j = 1,nnodey),
      .                                                  k = 1, nnodephi)
 
-
+         close(28)
 
          write(38, 309) nnodex, nnodey, nnodephi
          write(38, 310) psilim
@@ -4004,8 +4035,46 @@ c     .                                                  k = 1, nnodephi)
          write(38, 310) ((eb(i, j, kplot3), i = 1, nnodex),j = 1,nnodey)
          write(38, 310) ((eb(i, j, kplot4), i = 1, nnodex),j = 1,nnodey)
 
+         close(38)
 
+         if (imcap .eq. 1) then
+            write(34, 309) mcap_number
 
+            write(34, 309) nnodex, nnodey, nnodephi
+            write(34, 310) (x(i), i = 1, nnodex)
+            write(34, 310) (y(j), j = 1, nnodey)
+            write(34, 310) (capr(i), i = 1, nnodex)
+            write(34, 310) (phiprime(k), k = 1, nnodephi)
+
+            write(34, 310) psilim, rt, b0
+            write(34, 310) (((psi(i, j, k), i = 1, nnodex),
+     .           j = 1,nnodey), k = 1, nnodephi)
+            write(34, 310) (((bmod(i, j, k), i = 1, nnodex),
+     .           j = 1,nnodey), k = 1, nnodephi)
+
+            write(34, 309) nnoderho
+            write(34, 310) (rhon(n), n = 1, nnoderho)
+            write(34, 310) (xnavg(n), n = 1, nnoderho)
+         endif
+
+         write(34, 309) mcap(imcap)
+
+         write(34, 310)(((ealpha(i,j,k),i=1,nnodex),
+     &                 j=1,nnodey),k=1,nnodephi)
+         write(34, 310)(((ebeta(i,j,k),i=1,nnodex),
+     &                 j=1,nnodey),k=1,nnodephi)
+         write(34, 310)(((eb(i,j,k),i=1,nnodex),
+     &                 j=1,nnodey),k=1,nnodephi)
+
+         write(34, 310)(((ntilda_e(i,j,k),i=1,nnodex),
+     &                  j=1,nnodey),k=1,nnodephi)
+
+         write(34, 310) ptot, pcrto2, pcito2
+
+         write(34, 310) (redotjeavg(n), n = 1, nnoderho)
+         write(34, 310) (redotj1avg(n), n = 1, nnoderho)
+         write(34, 310) (redotj2avg(n), n = 1, nnoderho)
+         write(34, 310) (redotj3avg(n), n = 1, nnoderho)
       end if
 
   310 format(1p6e12.4)
@@ -4289,9 +4358,43 @@ c     .                                                  k = 1, nnodephi)
      1                         7x, 'Re Ey', 7x, 'Im Ey',
      1                         7x, 'Re Ez', 7x, 'Im Ez')
 
+      call blacs_barrier(icontxt, 'All')
+
+      deallocate( mask )
+      deallocate( inv_xx )
+      deallocate( inv_yy )
+      deallocate( inv_zz )
+      deallocate( inv_xx_t )
+      deallocate( inv_yy_t )
+      deallocate( inv_zz_t )
+      deallocate( new_to_org )
+      deallocate( niabegin_all )
+      deallocate( isize_all )
+      deallocate( row )
+      deallocate( rowk )
+      deallocate( Btmp )
+      deallocate( brhs )
+      deallocate( descBtmp_all )
+      deallocate( descbrhs_all )
+      deallocate( itable )
+      deallocate( jtable )
+      deallocate( ktable )
+      deallocate( mtable )
+      deallocate( ntable )
+      deallocate( nphitable )
+      deallocate( brhs2 )
+      deallocate( brhs_tmp )
 
       deallocate( p_brhs )
       deallocate( p_ipiv )
+
+ 9000 continue
+
+      if (myid .eq. 0) then
+         close(34)
+
+         close(15)
+      endif
 
 *     -------------------------
 *     stop parallel environment

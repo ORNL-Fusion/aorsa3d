@@ -1,6 +1,158 @@
 c
 c***************************************************************************
 c
+       subroutine delta_(i, j, n, m,
+     .   delta_x, delta_y, delta_z,
+     .   bmod, gradprlb,
+     .   xm, q, xn, xnuomg,
+     .   xkt, omgc, omgp2,
+     .   lmin, lmax, nzfun, ibessel,
+     .   xkxsav, xkysav, xkzsav, capr,
+     .   bx,    by,    bz,
+     .   uxx, uxy, uxz,
+     .   uyx, uyy, uyz,
+     .   uzx, uzy, uzz,
+     .   iflag_gammab)
+
+*     ---------------------------------------------------------
+*     This routine uses the modified Z functions Z0, Z1, Z2
+*     with the appropriate sign changes for k_parallel < 0.0
+*     and uses the old left handed U matrix in paper
+*     ---------------------------------------------------------
+
+      implicit none
+
+      integer lmin, lmax, nzfun, lmaxdim, l, labs, ibessel,
+     .    i, j, n, m, iflag_gammab
+
+      real xkperp, xkprl, xm, q, xn, xkt, omgc, omgp2, xme
+      real xkprl_eff, fgam, y0, sgn_kprl
+      real dakbdkb, xnuomg, xkprl_cutoff
+      real akprl, gammab, rho, alpha, eps0, omgrf, v0i
+      real a, b, bmod, gradprlb
+      real bx, by, bz
+      real xkxsav, xkysav, xkzsav, capr
+      real xkphi
+      real xkalp, xkbet, xk0, rgamma
+
+      real uxx, uxy, uxz,
+     .     uyx, uyy, uyz,
+     .     uzx, uzy, uzz
+
+      complex zi, zfunct, fzeta, omgrfc
+      complex zfunct0, zeta0, sig3cold, z0, z1, z2
+      complex sig0, sig1, sig2, sig3, sig4, sig5
+      complex sig0l, sig1l, sig2l, sig3l, sig4l, sig5l
+
+      complex delta_x, delta_y, delta_z
+      complex delta_xl, delta_yl, delta_zl
+
+      parameter (lmaxdim = 99)
+
+      complex xil(0: lmaxdim), xilp(0: lmaxdim)
+      complex exil(0: lmaxdim), exilp(0: lmaxdim), exilpp(0: lmaxdim)
+
+      complex zetal, zieps0, arg,
+     .   al, bl, cl,
+     .   gamma, zeta_eff
+
+      complex dpldkb, dplpdkb, dbldkb
+      complex dpldakb, dplpdakb, dbldakb
+
+
+      common/sigcom/zi, eps0, v0i, omgrf
+
+
+
+      xme = 9.11e-31
+      zieps0 = zi * eps0
+      alpha = sqrt(2. * xkt / xm)
+      rho = alpha / omgc
+      xkphi = xkzsav / capr
+      omgrfc = omgrf * (1. + zi * xnuomg)
+
+      xkalp = uxx * xkxsav + uxy * xkysav + uxz * xkphi
+      xkbet = uyx * xkxsav + uyy * xkysav + uyz * xkphi
+      xkprl = uzx * xkxsav + uzy * xkysav + uzz * xkphi
+
+      xkperp = sqrt(xkalp**2 + xkbet**2)
+      akprl = abs(xkprl)
+
+
+
+      sgn_kprl = sign(1.0, xkprl)
+
+      if (akprl .lt. 0.1) then
+
+         xkprl = 0.1 * sgn_kprl
+         akprl = abs(xkprl)
+
+      end if
+
+
+      gamma = 0.5 * xkperp**2 * rho**2
+      rgamma = real(gamma)
+
+
+      call besiexp(gamma, lmax, exil, exilp, exilpp, lmaxdim)
+
+      delta_x = 0.0
+      delta_y = 0.0
+      delta_z = 0.0
+
+
+      do l = lmin, lmax
+         labs = abs(l)
+
+
+
+         zetal = (omgrfc - l * omgc) / (xkprl * alpha)
+
+         gammab = l * omgc / (2.0 * alpha * xkprl**2)
+     .        * gradprlb / bmod
+
+
+         if(abs(gammab) .gt. 1000.0) gammab = 1000.0
+         if(abs(gammab) .lt. .01)gammab = .01
+
+
+
+         if (nzfun .eq. 0) call z_approx(sgn_kprl, zetal, 0.0,
+     .                                                     z0, z1, z2)
+         if (nzfun .eq. 1) call z_approx(sgn_kprl, zetal, gammab,
+     .                                                     z0, z1, z2)
+         if (nzfun .eq. 2) call z_smithe(sgn_kprl, zetal, gammab,
+     .                                                     z0, z1, z2)
+         if (nzfun .eq. 3) call z_table(sgn_kprl, zetal, gammab,
+     .                                               .001, z0, z1, z2)
+
+
+         delta_xl = - zieps0 / q * omgp2 / omgrf**2 * zetal
+     .        * xkperp * l * exil(labs)/ gamma  * omgrf / omgc * z0
+         
+         delta_yl = - zieps0 / q * omgp2 / omgrf**2 * zetal
+     .        * zi * xkperp * omgrf /omgc * (exilp(labs) - exil(labs))
+     .        * z0	
+         
+         delta_zl = - zieps0 / q * omgp2 / omgrf**2 * zetal
+     .        * xkprl * 2.0 * zetal * exil(labs) * z1	
+         
+         delta_x = delta_x + delta_xl 
+         delta_y = delta_y + delta_yl 
+         delta_z = delta_z + delta_zl 	    
+      end do
+
+
+      return
+
+  101 format(i10, 1p8e12.4)
+ 1314 format(4i10, 1p9e12.4)
+ 1312 format(1p9e12.4)
+  100 format('ier = ', i5, 'besic failed')
+      end
+c
+c***************************************************************************
+c
        subroutine sigmah_stix_elect(i, j, n, m,
      .   bmod, gradprlb,
      .   xm, q, xn, xnuomg,

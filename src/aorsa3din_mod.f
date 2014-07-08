@@ -124,7 +124,9 @@ c-----       if(igeom.eq.3)Stellarator (expanded) flux surfaces (right handed)
 c-----       if(igeom.eq.4)Stellarator (expanded) flux surfaces (left  handed)
 c-----       if(igeom.eq.5)Stellarator flux surfaces from VMEC
 
-      integer :: mcap = 0                 !-----number of the field period calculated (0 .le. mcap .le. np-1)
+      integer :: nfp = 12
+      integer :: mcap(100) = 0            !-----number of the field period calculated (0 .le. mcap .le. np-1)
+      integer :: mcap_number = 1
 
       integer :: nstep  = 16              !-----determines steepness of step function magnetic field in option igeom=3
       integer :: nabs = 2                 !-----polynomial coefficient which determines slope of the absorber
@@ -184,7 +186,6 @@ c-----    For black background set ibackground = 1 (box is red)
 
       integer :: lhel = 2
       integer :: mhel = 12
-      integer :: nfp = 12
 
       real :: acoil = 0.46
 
@@ -212,8 +213,8 @@ c-----    For black background set ibackground = 1 (box is red)
       integer :: npcol = 8
 
       namelist/aorsa3din/nmodesx, nmodesy, nmodesphi, nwdot, lmax,
-     .    ibessel, mhel, lhel, nfp, mcap, acoil, kplot, nplot, mplot, 
-     .    nphiplot, idiag, jdiag, kdiag,
+     .    ibessel, mhel, lhel, nfp, mcap, mcap_number,
+     .    acoil, kplot, nplot, mplot, nphiplot, idiag, jdiag, kdiag,
      .    dthetant0, dphiant0, dpsiant0,
      .    ti0, xnuead, xnu1ad, xnu2ad, rant, te0, yant,
      .    inu, iprint, iexact, delta0, xwall, xnwall,
