@@ -23,6 +23,8 @@ OBJECT_DIR = $(HOME)/$(CODEDIR)/obj/$(ARCH)
 OBJFILES = \
  $(OBJECT_DIR)/kron3_mod.o \
  $(OBJECT_DIR)/aorsa3din_mod.o \
+ $(OBJECT_DIR)/swim_global_data_mod.o \
+ $(OBJECT_DIR)/profile_mod.o \
  $(OBJECT_DIR)/aorsa3dMain.o \
  $(OBJECT_DIR)/aorsaSubs.o \
  $(OBJECT_DIR)/sigma.o \
@@ -82,7 +84,15 @@ $(OBJECT_DIR)/kron3_mod.o:      $(SOURCE_DIR)/kron3_mod.f $(INCFILES)
 $(OBJECT_DIR)/aorsa3din_mod.o:  $(SOURCE_DIR)/aorsa3din_mod.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3din_mod.o \
                                 $(SOURCE_DIR)/aorsa3din_mod.f
-				
+
+$(OBJECT_DIR)/swim_global_data_mod.o:  $(SOURCE_DIR)/swim_global_data_mod.f $(INCFILES)
+	                        $(COMPILE90) -o $(OBJECT_DIR)/swim_global_data_mod.o \
+                                $(SOURCE_DIR)/swim_global_data_mod.f
+
+$(OBJECT_DIR)/profile_mod.o:    $(SOURCE_DIR)/profile_mod.f $(INCFILES)
+	                        $(COMPILE90) -o $(OBJECT_DIR)/profile_mod.o \
+                                $(SOURCE_DIR)/profile_mod.f
+
 $(OBJECT_DIR)/aorsa3dMain.o:    $(SOURCE_DIR)/aorsa3dMain.F $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3dMain.o \
                                 $(SOURCE_DIR)/aorsa3dMain.F

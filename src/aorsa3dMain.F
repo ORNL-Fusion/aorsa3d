@@ -11,6 +11,7 @@
 
       program aorsa3dMain
 
+      use profile_mod
       use aorsa3din_mod
 
       implicit none
@@ -46,11 +47,11 @@
       real xkx_cutoff, xky_cutoff, xkz_cutoff
 
 *     ----------------------
-*     160 x 160 x 36 modes max
+*     80 x 80 x 72 modes max
 *     ----------------------
-      parameter (nmodesmax = 160)
-      parameter (mmodesmax = 160)
-      parameter (lmodesmax = 36)
+      parameter (nmodesmax = 80)
+      parameter (mmodesmax = 80)
+      parameter (lmodesmax = 72)
 
 
       parameter (nxmx = nmodesmax)
@@ -517,18 +518,17 @@ c        integer, dimension(:,:,:), allocatable :: mask2
      &          status='old', form='formatted')
       rewind(63)
 
-!       --------------------------
-!       determine points in plasma
-!       --------------------------
-        psimask = 1.05
-
-
 c <<  input data
       read (63, aorsa3din)
 
       idiag = nmodesx / 2
       jdiag = nmodesy / 2
       kdiag = nmodesphi / 2
+
+!       --------------------------
+!       determine points in plasma
+!       --------------------------
+        psimask = psilim
 
       if(mcap_number .gt. 1) prfin = 0.0
 
@@ -1503,11 +1503,13 @@ c     .               xjanty * gaussthetap**2 * gausspsi * real(cexpant)
                   end if
                end if
 
-               xn2a(i, j, k) = xnea(i, j, k) * eta2
-               xn3a(i, j, k) = xnea(i, j, k) * eta3
-               xn1a(i, j, k) = (xnea(i, j, k)
-     .              - xn2a(i, j, k) * z2
-     .              - xn3a(i, j, k) * z3) / z1
+               if (iprofile .ne. 5) then
+                  xn2a(i, j, k) = xnea(i, j, k) * eta2
+                  xn3a(i, j, k) = xnea(i, j, k) * eta3
+                  xn1a(i, j, k) = (xnea(i, j, k)
+     .                 - xn2a(i, j, k) * z2
+     .                 - xn3a(i, j, k) * z3) / z1
+               end if
 
 *               ------------------------------------
 *               determine which points are in plasma
@@ -1519,7 +1521,60 @@ c     .               xjanty * gaussthetap**2 * gausspsi * real(cexpant)
          end do
       end do
 
+*     ---------------------------------------
+*     read profile data from the plasma state:
+*     ---------------------------------------
+      if (iprofile .eq. 5) then
+         rewind (63)
+         read(63, state)
 
+	 s_t_s = q * s_t_s * 1.0e3    !input is kev TEMPS IN JOULES
+
+         call flux_to_rzphi(nnodex,nnodey,nnodephi,s_n_s(1:s_nrho_n,0),
+     .        xnea(1:nnodex,1:nnodey,1:nnodephi),
+     .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
+     .        rho(1:nnodex,1:nnodey,1:nnodephi))
+
+         call flux_to_rzphi(nnodex,nnodey,nnodephi,s_t_s(1:s_nrho_n,0),
+     .        xkte(1:nnodex,1:nnodey,1:nnodephi),
+     .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
+     .        rho(1:nnodex,1:nnodey,1:nnodephi))
+
+         call flux_to_rzphi(nnodex,nnodey,nnodephi,s_n_s(1:s_nrho_n,1),
+     .        xn1a(1:nnodex,1:nnodey,1:nnodephi),
+     .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
+     .        rho(1:nnodex,1:nnodey,1:nnodephi))
+
+         call flux_to_rzphi(nnodex,nnodey,nnodephi,s_t_s(1:s_nrho_n,1),
+     .        xkti(1:nnodex,1:nnodey,1:nnodephi),
+     .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
+     .        rho(1:nnodex,1:nnodey,1:nnodephi))
+
+         call flux_to_rzphi(nnodex,nnodey,nnodephi,s_n_s(1:s_nrho_n,2),
+     .        xn2a(1:nnodex,1:nnodey,1:nnodephi),
+     .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
+     .        rho(1:nnodex,1:nnodey,1:nnodephi))
+
+         call flux_to_rzphi(nnodex,nnodey,nnodephi,s_n_s(1:s_nrho_n,3),
+     .        xn3a(1:nnodex,1:nnodey,1:nnodephi),
+     .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
+     .        rho(1:nnodex,1:nnodey,1:nnodephi))
+
+         do i = 1, nnodex
+            do j = 1, nnodey
+               do k = 1, nnodephi
+                  if (psi(i,j,k) .gt. psilim) then
+                     xnea(i,j,k) = 1.0e-10
+                     xn1a(i,j,k) = 1.0e-10
+                     xn2a(i,j,k) = 1.0e-10
+                     xn3a(i,j,k) = 1.0e-10
+                     xkte(i,j,k) = 1.0e-10 * q
+                     xkti(i,j,k) = 1.0e-10 * q
+                  end if
+               end do
+            end do
+         end do
+      end if
 
       call fluxavg(xnea, xnavg, rho, nxmx, nymx, nphimx, nrhomax,
      .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
@@ -4426,4 +4481,88 @@ c
         return
         end subroutine pzgecopy
 
+c
+c***************************************************************************
+c
+      subroutine fluxavg(f, favg, rho, nxdim, nydim, nphidim, nrhodim,
+     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
+     .   fvol, vol)
 
+      implicit none
+
+      integer nxdim, nydim, nphidim, nrhodim, nnodex, nnodey, nnodephi,
+     .   nnoderho
+      integer n, i, j, k
+
+      real f(nxdim, nydim, nphidim), favg(nrhodim),
+     .    rho(nxdim, nydim, nphidim),
+     .   drho, dx, dy, dphi, fvol(nrhodim), vol(nrhodim), capr(nxdim)
+
+
+      do n = 1, nnoderho
+          fvol(n) = 0.0
+          vol(n) = 0.0
+      end do
+
+
+      do i = 1, nnodex
+         do j = 1, nnodey
+            do k = 1, nnodephi
+               n = int(rho(i,j,k) / drho) + 1
+               if(n .ge. 1 .and. n .le. nnoderho)then
+
+                  fvol(n) = fvol(n) + dx * dy * capr(i) * dphi *f(i,j,k)
+                  vol(n) =   vol(n) + dx * dy * capr(i) * dphi
+
+               end if
+            end do
+         end do
+      end do
+
+
+      do n = 1, nnoderho
+         if(vol(n) .ne. 0.0)
+     .     favg(n) = fvol(n) / vol(n)
+c         write(6, 100)n, fvol(n), vol(n), favg(n)
+      end do
+
+
+
+  100 format (1i10, 1p8e12.4)
+  101 format (10i10)
+      return
+      end
+c
+c***************************************************************************
+c
+      subroutine flux_to_rzphi(nnodex, nnodey, nnodephi, profile_in, 
+     .   profile_out, rho, nrho, rho_ijk)
+     
+      implicit none
+      
+      real :: profile_in(nrho), profile_out(nnodex,nnodey,nnodephi)
+      real :: rho(nrho), rho_ijk(nnodex,nnodey,nnodephi)
+      integer :: nnodex, nnodey, nnodephi, nrho, i, j, k, n
+
+      do i = 1, nnodex
+         do j = 1, nnodey
+            do k = 1, nnodephi
+               do n = 1, nrho
+                  if (rho(n) .gt. rho_ijk(i,j,k)) exit
+               end do
+
+               if (n .eq. 1) then
+                  profile_out(i,j,k) = profile_in(1)
+               else if (n .gt. nrho) then
+                  profile_out(i,j,k) = profile_in(nrho)
+               else
+                  profile_out(i,j,k) = profile_in(n-1)  +
+     .                (profile_in(n) - profile_in(n-1)) /
+     .                (rho(n) - rho(n-1)) * (rho_ijk(i,j,k) - rho(n-1))
+               end if
+	    end do
+	 end do
+      end do
+
+      return
+      end subroutine flux_to_rzphi
