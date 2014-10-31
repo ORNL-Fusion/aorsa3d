@@ -47,11 +47,11 @@
       real xkx_cutoff, xky_cutoff, xkz_cutoff
 
 *     ----------------------
-*     80 x 80 x 72 modes max
+*     80 x 80 x 54 modes max
 *     ----------------------
       parameter (nmodesmax = 80)
       parameter (mmodesmax = 80)
-      parameter (lmodesmax = 72)
+      parameter (lmodesmax = 54)
 
 
       parameter (nxmx = nmodesmax)
@@ -1405,9 +1405,9 @@ c     .               / rhonorm
 
          if(nstrap .eq. 2)gaussphi(k) =
      .        exp(-(phiprime(k) - phiant1)**2 / dphiant**2)
-     .                                                * exp(zi * phase1)
+     .        * exp(zi * phase1) * amplt(1)
      .      + exp(-(phiprime(k) - phiant2)**2 / dphiant**2)
-     .                                                * exp(zi * phase2)
+     .        * exp(zi * phase2) * amplt(2)
          if(myid .eq. 0)write(6, 1312) k, gaussphi(k)
          if(myid .eq. 0)write(15, 1312) k, gaussphi(k)
       end do

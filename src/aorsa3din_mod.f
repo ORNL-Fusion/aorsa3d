@@ -110,12 +110,13 @@ c-----flat=1.0 gives flat profiles
 c           if(theta_ant .eq. 0.) antenna is on low field side or right (default)
 c           if(theta_ant .eq. 180.) antenna is on high field side or left
       real :: dthetant0 = 40.
-      real :: dphiant0 = 5.0
+      real :: dphiant0 = 5.0              !-----not used
       integer :: nstrap = 1
       integer :: nphiant = 24             !-----not used
       real :: strap_width = 0.1524
       real :: strap_separ = 0.4572
       real :: phase_diff = 180.0
+      real :: amplt(2) = 1.0
 
       integer :: igeom = 2
 c-----igeom: if(igeom.eq.1)Solovev flux surfaces
@@ -235,6 +236,6 @@ c-----    For black background set ibackground = 1 (box is red)
      .    ekappa, rwleft, rwright,
      .    nphiant, iexpnd, icurve, xnuomg, psilim, psiant, psiplasm,
      .    nstrap, iflag_gammab, theta_ant, strap_width, strap_separ,
-     .    phase_diff, damping, xkperp_cutoff, iprofile
+     .    phase_diff, amplt, damping, xkperp_cutoff, iprofile
 
       end module aorsa3din_mod
