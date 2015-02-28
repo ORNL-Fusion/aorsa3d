@@ -43,30 +43,23 @@ COMMON_OPTION  = -save -r8 -i8 -I $(INCLUDE_DIR)
 COMMON_OPTION2  = -r8 -i8 -I $(INCLUDE_DIR)
 
 F77 = ftn $(COMMON_OPTION)
-
 F90 = ftn -free $(COMMON_OPTION)
+F90_LOAD = ftn $(COMMON_OPTION)
 
 OPTIMIZATION = 
-
 OPTIMIZATION4 = $(OPTIMIZATION)
-OPTIMIZATIONg =  
 
 F77FLAGS= -c $(OPTIMIZATION)  -I $(INCLUDE_DIR) 
-F77FLAGSg= -c $(OPTIMIZATIONg) -I $(INCLUDE_DIR)
 F77FLAGS4= -c $(OPTIMIZATION4) -I $(INCLUDE_DIR)
 
 COMPILE = $(F77) $(F77FLAGS)
 COMPILE90 = $(F90) $(F77FLAGS) $(INLINE)
-COMPILEg = $(F77) $(F77FLAGSg)
 COMPILE4 = $(F77) $(F77FLAGS4)
 
-#FFT_LIB = /global/homes/j/jaegeref/AORSA2D/libdfftpack_pgf90.a
 LOADFLAGS = 
-LIBS = \
-#  $(FFT_LIB) \
- -L/global/homes/j/jaegeref/pgplot/5.2/cnl2.0_ifort/pgplot -lpgplot 
+LIBS = -L/global/homes/j/jaegeref/pgplot/5.2/cnl2.0_ifort/pgplot -lpgplot 
 
-LOAD = $(F90) $(OPTIMIZATION) $(LOADFLAGS) 
+LOAD = $(F90_LOAD) $(OPTIMIZATION) $(LOADFLAGS) 
 
 # Compile the program
 
@@ -76,11 +69,11 @@ $(EXEC):          $(OBJFILES)
 # Dependencies
 
 $(OBJECT_DIR)/kron3_mod.o:      $(SOURCE_DIR)/kron3_mod.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/kron3_mod.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/kron3_mod.o \
                                 $(SOURCE_DIR)/kron3_mod.f
 
 $(OBJECT_DIR)/aorsa3din_mod.o:  $(SOURCE_DIR)/aorsa3din_mod.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3din_mod.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/aorsa3din_mod.o \
                                 $(SOURCE_DIR)/aorsa3din_mod.f
 
 $(OBJECT_DIR)/swim_global_data_mod.o:  $(SOURCE_DIR)/swim_global_data_mod.f $(INCFILES)
@@ -92,15 +85,15 @@ $(OBJECT_DIR)/profile_mod.o:    $(SOURCE_DIR)/profile_mod.f $(INCFILES)
                                 $(SOURCE_DIR)/profile_mod.f
 
 $(OBJECT_DIR)/aorsa3dMain.o:    $(SOURCE_DIR)/aorsa3dMain.F $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3dMain.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/aorsa3dMain.o \
                                 $(SOURCE_DIR)/aorsa3dMain.F
 
 $(OBJECT_DIR)/aorsaSubs.o:      $(SOURCE_DIR)/aorsaSubs.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsaSubs.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/aorsaSubs.o \
                                 $(SOURCE_DIR)/aorsaSubs.f
 
 $(OBJECT_DIR)/sigma.o:          $(SOURCE_DIR)/sigma.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/sigma.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/sigma.o \
                                 $(SOURCE_DIR)/sigma.f
                                 
 $(OBJECT_DIR)/zfunction.o:      $(SOURCE_DIR)/zfunction.f $(INCFILES)
@@ -112,39 +105,39 @@ $(OBJECT_DIR)/ztable.o:         $(SOURCE_DIR)/ztable.f $(INCFILES)
                                 $(SOURCE_DIR)/ztable.f
                                 
 $(OBJECT_DIR)/current.o:        $(SOURCE_DIR)/current.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/current.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/current.o \
                                 $(SOURCE_DIR)/current.f
                                 
 $(OBJECT_DIR)/wdot.o:           $(SOURCE_DIR)/wdot.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/wdot.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/wdot.o \
                                 $(SOURCE_DIR)/wdot.f                                
 
 $(OBJECT_DIR)/fourier.o:        $(SOURCE_DIR)/fourier.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/fourier.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/fourier.o \
                                 $(SOURCE_DIR)/fourier.f
                                 
 $(OBJECT_DIR)/assert.o:         $(SOURCE_DIR)/assert.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/assert.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/assert.o \
                                 $(SOURCE_DIR)/assert.f
                                 
 $(OBJECT_DIR)/descinit.o:       $(SOURCE_DIR)/descinit.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/descinit.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/descinit.o \
                                 $(SOURCE_DIR)/descinit.f
                                                                                                 
 $(OBJECT_DIR)/infog2l.o:        $(SOURCE_DIR)/infog2l.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/infog2l.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/infog2l.o \
                                 $(SOURCE_DIR)/infog2l.f
                                 
 $(OBJECT_DIR)/pxerbla.o:        $(SOURCE_DIR)/pxerbla.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/pxerbla.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/pxerbla.o \
                                 $(SOURCE_DIR)/pxerbla.f
                                 
 $(OBJECT_DIR)/setupblacs.o:     $(SOURCE_DIR)/setupblacs.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/setupblacs.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/setupblacs.o \
                                 $(SOURCE_DIR)/setupblacs.f                                                                                                
 
 $(OBJECT_DIR)/check.o:          $(SOURCE_DIR)/check.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/check.o \
+	                        $(COMPILE) -o $(OBJECT_DIR)/check.o \
                                 $(SOURCE_DIR)/check.f
 
 make clean:
