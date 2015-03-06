@@ -11,7 +11,9 @@
 
       program aorsa3dMain
 
+      use ql_myra_mod
       use profile_mod
+
       use aorsa3din_mod
 
       implicit none
@@ -46,6 +48,26 @@
 
       real xkx_cutoff, xky_cutoff, xkz_cutoff
 
+      real UminPara, UmaxPara
+      real vce_mks, vc1_mks, vc2_mks, vc3_mks
+
+      integer lmaxdim
+      parameter (lmaxdim = 25)
+
+      integer n_theta_max, n_psi_max, nbessj
+
+      parameter (n_theta_max = 200)
+      parameter (n_psi_max = 200)
+
+      real theta_(n_theta_max, n_psi_max)
+      integer n_theta_(n_psi_max)
+
+      integer, parameter :: n_psi_dim = n_psi_max
+
+      integer :: n_psi
+
+      real :: rho_a(n_psi_dim)
+
 *     ----------------------
 *     80 x 80 x 54 modes max
 *     ----------------------
@@ -73,6 +95,32 @@
       parameter (nldim3 = 3 * nldim)
       parameter (ndfmax = nldim3)
 
+
+      real, dimension(:),   allocatable :: UPERP, UPARA
+      real, dimension(:),   allocatable :: UPERP_work, UPARA_work
+
+      real, dimension(:,:), allocatable :: DFDUPERe, DFDUPARe      
+      real, dimension(:,:), allocatable :: DFDUPER1, DFDUPAR1
+      real, dimension(:,:), allocatable :: DFDUPER2, DFDUPAR2
+      real, dimension(:,:), allocatable :: DFDUPER3, DFDUPAR3
+
+      real, dimension(:,:,:), allocatable :: fe_cql_cart
+      real, dimension(:,:,:), allocatable :: dfe_cql_uprp
+      real, dimension(:,:,:), allocatable :: dfe_cql_uprl
+      
+      real, dimension(:,:,:), allocatable :: f1_cql_cart
+      real, dimension(:,:,:), allocatable :: df1_cql_uprp
+      real, dimension(:,:,:), allocatable :: df1_cql_uprl
+      
+      real, dimension(:,:,:), allocatable :: f2_cql_cart
+      real, dimension(:,:,:), allocatable :: df2_cql_uprp
+      real, dimension(:,:,:), allocatable :: df2_cql_uprl
+      
+      real, dimension(:,:,:), allocatable :: f3_cql_cart
+      real, dimension(:,:,:), allocatable :: df3_cql_uprp
+      real, dimension(:,:,:), allocatable :: df3_cql_uprl
+
+      integer :: i_psi_eq
 
 c***  3-D arrays:
       complex xjx(nxmx, nymx, nphimx),
@@ -239,7 +287,7 @@ c***  3-D arrays:
      .     xkysav(mkdim1 : mkdim2),
      .     xkzsav(lkdim1 : lkdim2),
      .     xkperp, xketa,
-     .     ptot, pcito2, pcrto2, powtot, pscale,
+     .     ptot, ptot_wdot, pcito2, pcrto2, powtot, pscale,
      .     cosalp, sinalp, t1, gaussian, frho, q07qa, psimax,
      .     rhomax, xnprl, rhoant, gausspsi,
      .     dthetant, dphiant, dpsiant, gausstheta,
@@ -287,10 +335,12 @@ c***  3-D arrays:
       real xprimec(nxmx), caprc(nxmx), xcourse(nxmx), capr(nxmx),
      .   xprime(nxmx), x(nxmx), dx, dxc
 
-      real rhon(nrhomax), wdoti1avg(nrhomax), wdoti2avg(nrhomax),
-     .   wdoteavg(nrhomax), drho
+      real rhon(nrhomax), drho, wdoti1avg(nrhomax), wdoti2avg(nrhomax),
+     .     wdoti3avg(nrhomax), wdoteavg(nrhomax), wdotavg(nrhomax),
+     .     darea(nrhomax)
       real xnavg(nrhomax), qhat, omgte, omgti,
      .     vthe0, vthi0, xnuee, xnuii, xnu7omg
+      real dldbavg(nrhomax)
       real redotjeavg(nrhomax), redotj1avg(nrhomax),
      .     redotj2avg(nrhomax), redotj3avg(nrhomax)
 
@@ -336,14 +386,24 @@ c***  3-D arrays:
 
       complex pc
 
-      real wdote(nxmx, nymx), wdoti1(nxmx, nymx),
-     .     wdoti2(nxmx, nymx), wdoti3(nxmx, nymx), wdot(nxmx, nymx)
+      real wdote(nxmx, nymx, nphimx), wdoti1(nxmx, nymx, nphimx),
+     .     wdoti2(nxmx, nymx, nphimx), wdoti3(nxmx, nymx, nphimx),
+     .     wdot(nxmx, nymx, nphimx)
       real fye, fyi1, fyi2, fyi3, fy
 
-      real fype(nxmx, nymx), fypi1(nxmx, nymx),
-     .     fypi2(nxmx, nymx), fypi3(nxmx, nymx), fyp(nxmx, nymx)
+!      real fype(nxmx, nymx), fypi1(nxmx, nymx),
+!     .     fypi2(nxmx, nymx), fypi3(nxmx, nymx), fyp(nxmx, nymx)
 
-      real denom
+      real fx0e(nxmx, nymx, nphimx), fx0i1(nxmx, nymx, nphimx),
+     .     fx0i2(nxmx, nymx, nphimx), fx0i3(nxmx, nymx, nphimx),
+     .     fy0e(nxmx, nymx, nphimx), fy0i1(nxmx, nymx, nphimx),
+     .     fy0i2(nxmx, nymx, nphimx), fy0i3(nxmx, nymx, nphimx),
+     .     fz0e(nxmx, nymx, nphimx), fz0i1(nxmx, nymx, nphimx),
+     .     fz0i2(nxmx, nymx, nphimx), fz0i3(nxmx, nymx, nphimx),
+     .     fx0(nxmx, nymx, nphimx), fy0(nxmx, nymx, nphimx),
+     .     fz0(nxmx, nymx, nphimx)
+
+      real denom, fz0tot
 
 
 
@@ -351,7 +411,8 @@ c***  3-D arrays:
       real pcedotj1, pcedotje, pcedotj2, pcedotjt, pcedotj3
       real pedotj1, pedotje, pedotj2, pedotjt, pedotj3
 
-      real p, pi1, pi2, pit, pi3, pe
+      real p, pi1, pi2, pit, pi3, pe, pt
+      real pcti1, pcte, pcti2, pctt, pcti3
 
       complex sigexx, sigexy, sigexz,
      .        sigeyx, sigeyy, sigeyz,
@@ -525,6 +586,9 @@ c <<  input data
       jdiag = nmodesy / 2
       kdiag = nmodesphi / 2
 
+      nbessj = lmax + 2
+
+
 !       --------------------------
 !       determine points in plasma
 !       --------------------------
@@ -604,6 +668,10 @@ c     &            nprow,npcol,nproc
          open(unit=28,file='out28',status='unknown',form='formatted')
 c         open(unit=29,file='out29',status='unknown',form='formatted')
 c         open(unit=30,file='out30',status='unknown',form='formatted')
+
+         open(unit=69,file='movie_wdot',status='unknown',
+     .        form='formatted')	 
+
 c         open(unit=32,file='diagnostic',status='unknown',
 c     &      form='formatted')
          open(unit=53, file='fields_realSpace', status='unknown',
@@ -856,6 +924,57 @@ c     signb = 1.0
 
       xwleft = rwleft - rt
       xwright = rwright - rt
+
+
+*     --------------------------------
+*     Distribution function
+*     --------------------------------
+
+      if(ndisti1   .eq. 0 .and.
+     .   ndisti2   .eq. 0 .and.
+     .   ndisti3   .eq. 0 .and.
+     .   ndiste    .eq. 0)   then
+
+         allocate( UPERP(nuper) )
+         allocate( UPARA(nupar) )
+	 
+         allocate( UPERP_work(nuper) )
+         allocate( UPARA_work(nupar) )
+	 
+         allocate( dfdupere(nuper, nupar) )
+         allocate( dfdupare(nuper, nupar) )
+	 
+         allocate( dfduper1(nuper, nupar) )
+         allocate( dfdupar1(nuper, nupar) )
+	 
+	 allocate( dfduper2(nuper, nupar) )
+         allocate( dfdupar2(nuper, nupar) )
+	 
+	 allocate( dfduper3(nuper, nupar) )
+         allocate( dfdupar3(nuper, nupar) )
+ 
+ 
+	 
+	 
+	 UPERP = 0.0
+	 UPARA = 0.0
+	 UPERP_work = 0.0
+	 UPARA_work = 0.0
+	 
+	 dfdupere = 0.0
+	 dfdupare = 0.0
+	 
+	 dfduper1 = 0.0
+	 dfdupar1 = 0.0
+	 
+	 dfduper2 = 0.0
+	 dfdupar2 = 0.0	 
+	 
+	 dfduper3 = 0.0
+	 dfdupar3 = 0.0
+
+      end if
+
 
       if(myid .eq. 0)write(53, 309) nnodex, nnodey, nnodephi
 
@@ -3526,60 +3645,225 @@ c
       end do
 
 
-c      t1 = second1(dummy)
+      t1 = second1(dummy)
 
-c      call wdot_right(wdote, fype, nxmx, nymx, nnodex, nnodey,
-c     .   nkx1, nkx2, nky1, nky2, nkdim1, nkdim2, mkdim1, mkdim2,
-c     .   xme, qe, xkte, omgce, omgpe2, lmax, xntau, dxdth,
-c     .   xkxsav, xkysav, nzfun,
-c     .   xprime, yprime, xkphi, omgrf,
-c     .   exk, eyk, ezk, btau, capr,
-c     .   bxn, byn, bzn,
-c     .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-c     .   jdiag, dx, dy, dxdrho, dzdrho)
+      if (nzeta_wdot .gt. 0) then
+
+      ! ------------------ !
+      ! --  Electrons   -- !
+      ! ------------------ !
+
+      call ql_myra_write(!bqlavg_e, cqlavg_e, eqlavg_e, fqlavg_e, 
+     .   wdote, fx0e, fy0e, fz0e, darea, nrhomax, nnoderho, drho,
+     .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
+     .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
+     .   mkdim1, mkdim2, lkdim1, lkdim2,
+     .   xme, qe, xnea, xkte, lmax,
+     .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
+     .   ealphak, ebetak, ebk, capr,
+     .   bxn, byn, bzn,
+     .   uxx, uxy, uxz,
+     .   uyx, uyy, uyz,
+     .   uzx, uzy, uzz,
+     .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
+     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim, nboundary,
+     .   myid, nproc, delta0, gradprlb, bmod, ndiste,
+     .   nupar, nuper, n_psi,
+     .   n_psi_dim, dfdupere, dfdupare,
+     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+     .   vce_mks, dfe_cql_uprp, dfe_cql_uprl, rho, rho_a, nbessj,
+     .   zeffcd, clight, x, y, rt, b0, ftrap, omgrf,
+     .   nkperp, lmaxdim, nzeta_wdot, theta_, 
+     .   n_theta_max, n_psi_max, i_psi_eq, n_theta_, dldbavg, 
+     .   n_bin, upshift, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 
-c      call wdot_right(wdoti1, fypi1, nxmx, nymx, nnodex, nnodey,
-c     .   nkx1, nkx2, nky1, nky2, nkdim1, nkdim2, mkdim1, mkdim2,
-c     .   xmi1, qi1, xkti, omgci1, omgp12, lmax, xntau, dxdth,
-c     .   xkxsav, xkysav, nzfun,
-c     .   xprime, yprime, xkphi, omgrf,
-c     .   exk, eyk, ezk, btau, capr,
-c     .   bxn, byn, bzn,
-c     .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-c     .   jdiag, dx, dy, dxdrho, dzdrho)
 
-c      call wdot_right(wdoti2, fypi2, nxmx, nymx, nnodex, nnodey,
-c     .   nkx1, nkx2, nky1, nky2, nkdim1, nkdim2, mkdim1, mkdim2,
-c     .   xmi2, qi2, xkti, omgci2, omgp22, lmax, xntau, dxdth,
-c     .   xkxsav, xkysav, nzfun,
-c     .   xprime, yprime, xkphi, omgrf,
-c     .   exk, eyk, ezk, btau, capr,
-c     .   bxn, byn, bzn,
-c     .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-c     .   jdiag, dx, dy, dxdrho, dzdrho)
+      ! ------------------ !
+      ! --Majority ions -- !
+      ! ------------------ !
 
-c      do i = 1, nnodex
-c         do j = 1, nnodey
-c            fyp(i,j) = fype(i,j) + fypi1(i,j) + fypi2(i,j) + fypi3(i,j)
-c            wdot(i,j) = wdote(i,j) + wdoti1(i,j) + wdoti2(i,j)
-c     1       + wdoti3(i,j)
-c         end do
-c      end do
+      call ql_myra_write(!bqlavg_i1, cqlavg_i1, eqlavg_i1, fqlavg_i1, 
+     .   wdoti1, fx0i1, fy0i1, fz0i1, darea, nrhomax, nnoderho, drho,
+     .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
+     .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
+     .   mkdim1, mkdim2, lkdim1, lkdim2,
+     .   xmi1, qi1, xn1a, xkti, lmax,
+     .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
+     .   ealphak, ebetak, ebk, capr,
+     .   bxn, byn, bzn,
+     .   uxx, uxy, uxz,
+     .   uyx, uyy, uyz,
+     .   uzx, uzy, uzz,
+     .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
+     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim, nboundary,
+     .   myid, nproc, delta0, gradprlb, bmod, ndisti1,
+     .   nupar, nuper, n_psi,
+     .   n_psi_dim, dfduper1, dfdupar1,
+     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+     .   vc1_mks, df1_cql_uprp, df1_cql_uprl, rho, rho_a, nbessj,
+     .   zeffcd, clight, x, y, rt, b0, ftrap, omgrf,
+     .   nkperp, lmaxdim, nzeta_wdot, theta_,
+     .   n_theta_max, n_psi_max, i_psi_eq, n_theta_, dldbavg,
+     .   n_bin, upshift, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
-c      time = second1(dummy) - t1
-c      tmin = time / 60.
+      ! ------------------ !
+      ! --Minority ions -- !
+      ! ------------------ !
 
-c      write(6 ,2837) tmin
-c      write(15,2837) tmin
+      if(eta2 .ne. 0.0)then
+      call ql_myra_write(!bqlavg_i2, cqlavg_i2, eqlavg_i2, fqlavg_i2, 
+     .   wdoti2, fx0i2, fy0i2, fz0i2, darea, nrhomax, nnoderho, drho,
+     .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
+     .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
+     .   mkdim1, mkdim2, lkdim1, lkdim2,
+     .   xmi2, qi2, xn2a, xkti, lmax,
+     .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
+     .   ealphak, ebetak, ebk, capr,
+     .   bxn, byn, bzn,
+     .   uxx, uxy, uxz,
+     .   uyx, uyy, uyz,
+     .   uzx, uzy, uzz,
+     .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
+     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim, nboundary,
+     .   myid, nproc, delta0, gradprlb, bmod, ndisti2,
+     .   nupar, nuper, n_psi,
+     .   n_psi_dim, dfduper2, dfdupar2,
+     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+     .   vc2_mks, df2_cql_uprp, df2_cql_uprl, rho, rho_a, nbessj,
+     .   zeffcd, clight, x, y, rt, b0, ftrap, omgrf,
+     .   nkperp, lmaxdim, nzeta_wdot, theta_,
+     .   n_theta_max, n_psi_max, i_psi_eq, n_theta_, dldbavg,
+     .   n_bin, upshift, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
+      end if
 
-c 2837 format('time taken to calculate wdot',f9.3,4h min)
+      ! --------------------- !
+      ! --Third ion species-- !
+      ! --------------------- !
+
+      if(eta3 .ne. 0.0)then
+      call ql_myra_write(!bqlavg_i3, cqlavg_i3, eqlavg_i3, fqlavg_i3, 
+     .   wdoti3, fx0i3, fy0i3, fz0i3, darea, nrhomax, nnoderho, drho,
+     .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
+     .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
+     .   mkdim1, mkdim2, lkdim1, lkdim2,
+     .   xmi3, qi3, xn3a, xkti, lmax,
+     .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
+     .   ealphak, ebetak, ebk, capr,
+     .   bxn, byn, bzn,
+     .   uxx, uxy, uxz,
+     .   uyx, uyy, uyz,
+     .   uzx, uzy, uzz,
+     .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
+     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim, nboundary,
+     .   myid, nproc, delta0, gradprlb, bmod, ndisti3,
+     .   nupar, nuper, n_psi,
+     .   n_psi_dim, dfduper3, dfdupar3,
+     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+     .   vc3_mks, df3_cql_uprp, df3_cql_uprl, rho, rho_a, nbessj,
+     .   zeffcd, clight, x, y, rt, b0, ftrap, omgrf,
+     .   nkperp, lmaxdim, nzeta_wdot, theta_,
+     .   n_theta_max, n_psi_max, i_psi_eq, n_theta_, dldbavg,
+     .   n_bin, upshift, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
+      end if
+
+
+      tmin = (second1(dummy) - t1) / 60.
+      if (myid.eq.0) then
+         write(6 ,2838) tmin
+         write(15,2838) tmin
+      endif
+
+ 2838 format('time to calculate quasilinear operator =', f9.3, ' min')
+
+      t1 = second1(dummy)
+
+c$$$      ! ------------------ !
+c$$$      ! --  Electrons   -- !
+c$$$      ! ------------------ !
+c$$$
+c$$$      call wdot_qlcheck(wdote_ql,
+c$$$     .   nnoderho, nrhomax,
+c$$$     .   bqlavg_e, cqlavg_e, xme, omgrf, xkteavg, 0,
+c$$$     .   nupar, nuper, n_psi,
+c$$$     .   n_psi_dim, dfdupere, dfdupare,
+c$$$     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+c$$$     .   vce_mks, dfe_cql_uprp, dfe_cql_uprl, rhon, rho_a, myid, 
+c$$$     .   dldbavg)
+c$$$
+c$$$
+c$$$
+c$$$      ! ------------------ !
+c$$$      ! --Majority ions -- !
+c$$$      ! ------------------ !
+c$$$
+c$$$      call wdot_qlcheck(wdoti1_ql, 
+c$$$     .   nnoderho, nrhomax,
+c$$$     .   bqlavg_i1, cqlavg_i1, xmi1, omgrf, xktiavg, ndisti1,
+c$$$     .   nupar, nuper, n_psi,
+c$$$     .   n_psi_dim, dfduper1, dfdupar1,
+c$$$     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+c$$$     .   vc1_mks, df1_cql_uprp, df1_cql_uprl, rhon, rho_a, myid, 
+c$$$     .   dldbavg)
+c$$$
+c$$$
+c$$$
+c$$$      ! ------------------ !
+c$$$      ! --Minority ions -- !
+c$$$      ! ------------------ !
+c$$$
+c$$$      if(eta2 .ne. 0.0)then
+c$$$
+c$$$      call wdot_qlcheck(wdoti2_ql, 
+c$$$     .   nnoderho, nrhomax,
+c$$$     .   bqlavg_i2, cqlavg_i2, xmi2, omgrf, xkti2avg, ndisti2,
+c$$$     .   nupar, nuper, n_psi,
+c$$$     .   n_psi_dim, dfduper2, dfdupar2,
+c$$$     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+c$$$     .   vc2_mks, df2_cql_uprp, df2_cql_uprl, rhon, rho_a, myid, 
+c$$$     .   dldbavg)
+c$$$
+c$$$      end if
+c$$$
+c$$$
+c$$$
+c$$$      ! --------------------- !
+c$$$      ! --Third ion species-- !
+c$$$      ! --------------------- !
+c$$$
+c$$$      if(eta3 .ne. 0.0)then
+c$$$
+c$$$      call wdot_qlcheck(wdoti3_ql, 
+c$$$     .   nnoderho, nrhomax,
+c$$$     .   bqlavg_i3, cqlavg_i3, xmi3, omgrf, xkti3avg, ndisti3,
+c$$$     .   nupar, nuper, n_psi,
+c$$$     .   n_psi_dim, dfduper3, dfdupar3,
+c$$$     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+c$$$     .   vc3_mks, df3_cql_uprp, df3_cql_uprl, rhon, rho_a, myid, 
+c$$$     .   dldbavg)
+c$$$
+c$$$      end if
+
+      end if
+
+      tmin = (second1(dummy) - t1) / 60.
+      if (myid.eq.0) then
+         write(6 , 2839) tmin
+         write(15, 2839) tmin
+      endif
+
+ 2839 format('time to check the quasilinear operator =', f9.3, ' min')
+
+      t1 = second1(dummy)
 
 c
 c--   Calculate E* dot J and Poynting flux (sp) in real space:
       do k = 1, nnodephi
          do i = 1, nnodex
             do j = 1, nnodey
+               wdot(i,j,k) = wdote(i,j,k)
+     .                   + wdoti1(i,j,k) + wdoti2(i,j,k) + wdoti3(i,j,k)
+
                redotj(i,j,k) =
      .                     .5 * real(conjg(ealpha(i,j,k)) * xjpx(i,j,k)
      .                             + conjg(ebeta(i,j,k)) * xjpy(i,j,k)
@@ -3632,14 +3916,22 @@ c               end if
          end do
       end do
 
+      tmin = (second1(dummy) - t1) / 60.
+      if (myid.eq.0) then
+         write(6 , 2840) tmin
+         write(15, 2840) tmin
+      endif
+
+ 2840 format('time to calculate E* dot J and Poynting flux =', f9.3, 
+     . ' min')
+
+
+      t1 = second1(dummy)
+
 
 c
 c--   Integrate E dot Jplasma and E dot Jantenna:
 c
-
-      call torint(x, y, phi, redotj, ptot,
-     .   1, nnodex, 1, nnodey, 1, nnodephi,
-     .   capr, nxmx, nymx, nphimx)
 
       call torint(x, y, phi, pcre, pcrto2,
      .   1, nnodex, 1, nnodey, 1, nnodephi,
@@ -3649,10 +3941,16 @@ c
      .   1, nnodex, 1, nnodey, 1, nnodephi,
      .   capr, nxmx, nymx, nphimx)
 
+      call torint(x, y, phi, redotj, ptot,
+     .   1, nnodex, 1, nnodey, 1, nnodephi,
+     .   capr, nxmx, nymx, nphimx)
+
+      call torint(x, y, phi, wdot, ptot_wdot,
+     .   1, nnodex, 1, nnodey, 1, nnodephi,
+     .   capr, nxmx, nymx, nphimx)
 
 
-
-      powtot =ptot
+      powtot = ptot
 
       if (powtot .ne. 0.0) pscale = prfin / powtot
       if (powtot .eq. 0.0) pscale = 1.0
@@ -3672,6 +3970,7 @@ c
       ptot = ptot * pscale
       pcrto2 = pcrto2 * pscale
       pcito2 = pcito2 * pscale
+      ptot_wdot = ptot_wdot * pscale
 
 c--   Scale fields and current to Prf, in:
 
@@ -3726,11 +4025,11 @@ c--   Scale fields and current to Prf, in:
                pcre(i,j,k) = pcre(i,j,k) * pscale
                pcim(i,j,k) = pcim(i,j,k) * pscale
 
-c               wdote(i,j)  = wdote(i,j)  * pscale
-c               wdoti1(i,j) = wdoti1(i,j) * pscale
-c               wdoti2(i,j) = wdoti2(i,j) * pscale
-c               wdoti3(i,j) = wdoti3(i,j) * pscale
-c               wdot(i,j)  = wdot(i,j)  * pscale
+               wdote(i,j,k)  = wdote(i,j,k)  * pscale
+               wdoti1(i,j,k) = wdoti1(i,j,k) * pscale
+               wdoti2(i,j,k) = wdoti2(i,j,k) * pscale
+               wdoti3(i,j,k) = wdoti3(i,j,k) * pscale
+               wdot(i,j,k)   = wdot(i,j,k)   * pscale
 
 c               fype(i,j)  = fype(i,j)  * pscale
 c               fypi1(i,j) = fypi1(i,j) * pscale
@@ -3738,6 +4037,11 @@ c               fypi2(i,j) = fypi2(i,j) * pscale
 c               fypi3(i,j) = fypi3(i,j) * pscale
 c               fyp(i,j)  = fyp(i,j)  * pscale
 
+               fz0e(i,j,k)  = fz0e(i,j,k)  * pscale
+               fz0i1(i,j,k) = fz0i1(i,j,k) * pscale
+               fz0i2(i,j,k) = fz0i2(i,j,k) * pscale
+               fz0i3(i,j,k) = fz0i3(i,j,k) * pscale
+               fz0(i,j,k)   = fz0(i,j,k)   * pscale
             end do
          end do
       end do
@@ -3801,8 +4105,30 @@ c-- Integrate individual species Estar dot J on solution mesh:
      .   1, nnodex, 1, nnodey, 1, nnodephi,
      .   capr, nxmx, nymx, nphimx)
 
+      call torint(x, y, phi, wdote, pe, 
+     .   1, nnodex, 1, nnodey, 1, nnodephi,
+     .   capr, nxmx, nymx, nphimx)
+      call torint(x, y, phi, wdoti1, pi1,
+     .   1, nnodex, 1, nnodey, 1, nnodephi,
+     .   capr, nxmx, nymx, nphimx)
+      call torint(x, y, phi, wdoti2, pi2,
+     .   1, nnodex, 1, nnodey, 1, nnodephi,
+     .   capr, nxmx, nymx, nphimx)
+      call torint(x, y, phi, wdoti3, pi3,
+     .   1, nnodex, 1, nnodey, 1, nnodephi,
+     .   capr, nxmx, nymx, nphimx)
 
-c     flux average of Estar dot J
+      call torint(x, y, phi, wdot, pt,
+     .   1, nnodex, 1, nnodey, 1, nnodephi,
+     .   capr, nxmx, nymx, nphimx)
+      call torint(x, y, phi, fz0, fz0tot,
+     .   1, nnodex, 1, nnodey, 1, nnodephi,
+     .   capr, nxmx, nymx, nphimx)
+
+*     -------------------------
+*     Do flux surface averages:
+*     -------------------------
+
       call fluxavg(redotje, redotjeavg, rho, nxmx, nymx, nphimx,
      .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
      .   dx, dy, dphi, capr, fvol, vol)
@@ -3816,25 +4142,21 @@ c     flux average of Estar dot J
      .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
      .   dx, dy, dphi, capr, fvol, vol)
 
-c      call sgrator(x, y, wdote, 1, nnodex, 1, nnodey, pe,
-c     .   capr, rt, nxmx, nymx)
-c      call sgrator(x, y, wdoti1, 1, nnodex, 1, nnodey, pi1,
-c     .   capr, rt, nxmx, nymx)
-c      call sgrator(x, y, wdoti2, 1, nnodex, 1, nnodey, pi2,
-c     .   capr, rt, nxmx, nymx)
-
-
-
-c      call fluxavg(wdote, wdoteavg,rho, nxmx, nymx, nphimx, nrhomax,
-c     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
-c     .   fvol, vol)
-c      call fluxavg(wdoti1, wdoti1avg, rho, nxmx, nymx, nphimx, nrhomax,
-c     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
-c     .   fvol, vol)
-c      call fluxavg(wdoti2, wdoti2avg, rho, nxmx, nymx, nphimx, nrhomax,
-c     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
-c     .   fvol, vol)
-
+      call fluxavg(wdote, wdoteavg, rho, nxmx, nymx, nphimx,
+     .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
+     .   dx, dy, dphi, capr, fvol, vol)
+      call fluxavg(wdoti1, wdoti1avg, rho, nxmx, nymx, nphimx,
+     .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
+     .   dx, dy, dphi, capr, fvol, vol)
+      call fluxavg(wdoti2, wdoti2avg, rho, nxmx, nymx, nphimx,
+     .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
+     .   dx, dy, dphi, capr, fvol, vol)
+      call fluxavg(wdoti3, wdoti3avg, rho, nxmx, nymx, nphimx,
+     .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
+     .   dx, dy, dphi, capr, fvol, vol)
+      call fluxavg(wdot, wdotavg, rho, nxmx, nymx, nphimx,
+     .   nrhomax, nnodex, nnodey, nnodephi, nnoderho, drho,
+     .   dx, dy, dphi, capr, fvol, vol)
 
 c      call fluxavg(fyp, fypavg, rho, nxmx, nymx, nphimx, nrhomax,
 c     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
@@ -3901,6 +4223,7 @@ c--   Calculate species fractions from Estar dot J:
 
 71667 format(' Species absorption from Estar dot J:')
 
+
       if (myid .eq. 0)then
          write(15, 169)
          write(15, 71667)
@@ -3918,15 +4241,32 @@ c--   Calculate species fractions from Estar dot J:
      1                    pedotjt, pcedotjt
 
 
+c--      Calculate species fractions from Wdot:
+         if (pt .ne. 0.0) then
+            pcte =   pe / pt  * 100.
+            pcti1 =  pi1 / pt * 100.
+            pcti2 =  pi2 / pt * 100.
+            pcti3 =  pi3 / pt * 100.
+         end if
+
+         pctt = pcte + pcti1 + pcti2 + pcti3
+
 81667 format(' Species absorption from Wdot:')
 
-c         write(15, 169)
-c         write(15, 81667)
-c         write(15, 81109)pe, pi1, pi2
-
-c         write(6, 169)
-c         write(6, 81667)
-c         write(6, 81109)pe, pi1, pi2
+         write(15, 169)
+         write(15, 81667)
+         write(15, 71109)  pe, pcte,
+     .                    pi1, pcti1,
+     .                    pi2, pcti2,
+     .                    pi3, pcti3,
+     .                    pt,  pctt
+         write(6, 169)
+         write(6, 81667)
+         write(6, 71109)  pe,  pcte,
+     .                    pi1, pcti1,
+     .                    pi2, pcti2,
+     .                    pi3, pcti3,
+     .                    pt,  pctt
 
  5001 continue
 
@@ -4090,7 +4430,45 @@ c     .                                                  k = 1, nnodephi)
          write(38, 310) ((eb(i, j, kplot3), i = 1, nnodex),j = 1,nnodey)
          write(38, 310) ((eb(i, j, kplot4), i = 1, nnodex),j = 1,nnodey)
 
+         write(38, 310) ((wdote(i,j,kplot),i = 1,nnodex),j = 1,nnodey)
+         write(38, 310) ((wdoti1(i,j,kplot),i = 1,nnodex),j = 1,nnodey)
+         write(38, 310) ((wdoti2(i,j,kplot),i = 1,nnodex),j = 1,nnodey)
+         write(38, 310) ((wdoti3(i,j,kplot),i = 1,nnodex),j = 1,nnodey)
+
          close(38)
+
+
+         write(69,309) nnodex, nnodey, nnodephi
+         write(69,310) (((wdote(i, j, k), i=1, nnodex), j=1, nnodey),
+     .                                                  k=1, nnodephi)
+         write(69,310) (((wdoti1(i, j, k), i=1, nnodex), j=1, nnodey),
+     .                                                   k=1, nnodephi)
+         write(69,310) (((wdoti2(i, j, k), i=1, nnodex), j=1, nnodey),
+     .                                                   k=1, nnodephi)
+         write(69,310) (((wdoti3(i, j, k), i=1, nnodex), j=1, nnodey),
+     .                                                   k=1, nnodephi)
+
+         close(69)
+
+*        -------------------------------
+*        write edotj data to edotj.out
+*        -------------------------------
+
+         open(unit=39, file='out_edotj', status='unknown',
+     .      form='formatted')
+         rewind(39)
+	 
+         write(39, 309) nnodex, nnodey, nnodephi
+         write(39, 310) (((redotje(i,j,k), i=1, nnodex), j=1, nnodey),
+     .                                                   k=1, nnodephi)
+         write(39, 310) (((redotj1(i,j,k), i=1, nnodex), j=1, nnodey),
+     .                                                   k=1, nnodephi)
+         write(39, 310) (((redotj2(i,j,k), i=1, nnodex), j=1, nnodey),
+     .                                                   k=1, nnodephi)
+         write(39, 310) (((redotj3(i,j,k), i=1, nnodex), j=1, nnodey),
+     .                                                   k=1, nnodephi)
+
+	 close (39)
 
          if (imcap .eq. 1) then
             write(34, 309) mcap_number
@@ -4130,6 +4508,11 @@ c     .                                                  k = 1, nnodephi)
          write(34, 310) (redotj1avg(n), n = 1, nnoderho)
          write(34, 310) (redotj2avg(n), n = 1, nnoderho)
          write(34, 310) (redotj3avg(n), n = 1, nnoderho)
+
+         write(34, 310) (wdoteavg(n), n = 1, nnoderho)
+         write(34, 310) (wdoti1avg(n), n = 1, nnoderho)
+         write(34, 310) (wdoti2avg(n), n = 1, nnoderho)
+         write(34, 310) (wdoti3avg(n), n = 1, nnoderho)
       end if
 
   310 format(1p6e12.4)
@@ -4224,6 +4607,18 @@ c     .                                                  k = 1, nnodephi)
      1   9h watts   , 3h = , f10.4, 9h %       /
      1   3x, 35h             total power absorbed = ,1e12.5,
      1   9h watts   , 3h = , f10.4, 9h %       )
+
+71109 format(
+     .   3x, 35h      power absorbed by electrons = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       /
+     .   3x, 35h  power absorbed by majority ions = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       /
+     .   3x, 35h  power absorbed by minority ions = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       /
+     .   3x, 35hpower absorbed by 3rd ion species = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       /
+     .   3x, 35h             total power absorbed = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       )
 
 81109 format(
      .   3x, 35h  power absorbed by majority ions = ,1e12.5,

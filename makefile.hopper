@@ -25,6 +25,8 @@ OBJFILES = \
  $(OBJECT_DIR)/aorsa3din_mod.o \
  $(OBJECT_DIR)/swim_global_data_mod.o \
  $(OBJECT_DIR)/profile_mod.o \
+ $(OBJECT_DIR)/qlsum.o \
+ $(OBJECT_DIR)/ql_myra.o \
  $(OBJECT_DIR)/aorsa3dMain.o \
  $(OBJECT_DIR)/aorsaSubs.o \
  $(OBJECT_DIR)/sigma.o \
@@ -77,6 +79,10 @@ $(EXEC):          $(OBJFILES)
 
 # Dependencies
 
+$(OBJECT_DIR)/qlsum.o:  $(SOURCE_DIR)/qlsum.f $(INCFILES)
+	                        $(COMPILE90) -o $(OBJECT_DIR)/qlsum.o \
+                                $(SOURCE_DIR)/qlsum.f
+
 $(OBJECT_DIR)/kron3_mod.o:      $(SOURCE_DIR)/kron3_mod.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/kron3_mod.o \
                                 $(SOURCE_DIR)/kron3_mod.f
@@ -116,6 +122,10 @@ $(OBJECT_DIR)/ztable.o:         $(SOURCE_DIR)/ztable.f $(INCFILES)
 $(OBJECT_DIR)/current.o:        $(SOURCE_DIR)/current.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/current.o \
                                 $(SOURCE_DIR)/current.f
+
+$(OBJECT_DIR)/ql_myra.o:        $(SOURCE_DIR)/ql_myra.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/ql_myra.o \
+                                $(SOURCE_DIR)/ql_myra.f
                                 
 $(OBJECT_DIR)/wdot.o:           $(SOURCE_DIR)/wdot.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/wdot.o \

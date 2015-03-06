@@ -1,6 +1,141 @@
 c
 c***************************************************************************
 c
+
+
+       subroutine maxwell_dist(u0, NUPAR, NUPER,
+     .                       UminPara, UmaxPara,
+     .                       UPERP, UPARA, DFDUPER, DFDUPAR)
+       implicit none
+
+       integer, intent(in) ::NUPAR,NUPER
+       integer n,m
+
+       real :: UminPara,UmaxPara
+       real :: UPERP(NUPER)
+       real :: UPARA(NUPAR)
+       real, intent(inout) :: DFDUPER(NUPER,NUPAR), DFDUPAR(NUPER,NUPAR)
+       real  pi, fnorm, f, u2, u0, u02
+
+       parameter (PI = 3.141592653597932384)
+
+       fnorm = u0**3 / pi**1.5
+       u02 = u0**2
+
+       do n = 1, NUPER
+          do m = 1, NUPAR
+             u2 = UPERP(n)**2 + UPARA(m)**2
+             f = fnorm * exp(-u2 * u02)
+             DFDUPER(n, m) = f *(-2.0 * UPERP(n) * u02)
+             DFDUPAR(n, m) = f *(-2.0 * UPARA(m) * u02)
+          end do
+       end do
+
+
+       end subroutine maxwell_dist
+
+c
+c***************************************************************************
+c
+
+
+      subroutine besjc (z,n,b,ier)
+c
+c subroutine besjc (z,n,b,ier)
+c
+c dimension of           b(n+1)
+c arguments
+c
+c latest revision        october 1978
+c
+c purpose                to calculate j bessel functions for complex
+c                        argument and integer order
+c
+c usage                  call besjc (z,n,b,ier)
+c
+c arguments
+c
+c on input               z
+c                          complex argument for which j bessel functions
+c                          are to be calculated.  abs(aimag(z)) must be
+c                          less than the largest real argument that the
+c                          fortran function exp can handle.
+c
+c                        n
+c                          integer, the highest order to be calculated.
+c                          n must be greater than or equal to zero.
+c
+c on output              b
+c                          complex vector of length n+1 containing the
+c                          bessel function values j-sub-0(z),j-sub-1(z),
+c                          ...,j-sub-n(z) in b(1),b(2),...,b(n+1).
+c                        ier
+c                          an integer error flag.
+c                          =0 if all desired orders have been calculated
+c                             satisfactorily,
+c                          =1 if abs(aimag(z)) is too large,
+c                          =2 if n is less than zero,
+c                          =2+k if only the first k results are correct.
+c                             in the returned values b(m) for m greater
+c                             than k, approximately the last
+c                             alog10(abs(b(m)/b(k))) significant digits
+c                             are in error.
+c
+c entry points           besjc
+c
+c special conditions     none
+c
+c common blocks          none
+c
+c i/o                    none, except for error messages produced by
+c                        calling the error handling routine uliber.
+c
+c precision              single
+c
+c specialist             russ rew, ncar, boulder, colorado
+c
+c accuracy               in tests run on the 7600 with orders from 0
+c                        through 10 using random values of the argument
+c                        with absolute value less than 50 but
+c                        concentrated around the origin, the maximum
+c                        relative error (or absolute error when it was
+c                        larger) observed was about 8.2e-14.
+c
+c timing                 on ncar"s control data 7600, besic takes about
+c                        .32+.008*n milliseconds when z=(1.0,1.0).
+c
+c portability            ansi 1966 standard
+c
+c
+c
+c
+c
+c
+      complex         z          ,b(1)
+      data iorj/0/,xlarge/1000000./
+c
+      nb = n+1
+      call b2slci (real(z),aimag(z),nb,iorj,b,ncalc)
+      ier = 0
+      if (ncalc .eq. nb) go to 103
+      if (ncalc .ge. 0) go to 102
+      if (n .ge. 0) go to 101
+      ier = 2
+      call uliber (ier,25h in besjc, n out of range,25)
+      go to 103
+  101 ier = 1
+      call uliber (ier,25h in besjc, x out of range,25)
+      go to 103
+  102 ier = 2+ncalc
+      call uliber (ier,40h in besjc, accuracy lost for some orders,40)
+  103 return
+      end
+
+
+c
+c********************************************************************
+c
+
       subroutine deriv_x(f, id, jd, kd, i, j, k, imax, jmax, kmax,
      .                     dx, dfdx, d2fdx2)
 

@@ -5,6 +5,11 @@
 !     --------------------------------------------------------
 !     Declarations and defaults for aorsa3d.in input variables
 !     --------------------------------------------------------
+      integer :: ndiste = 0               !-----ndist:  if (ndist .eq. 0) Maxwellian is used in sigmad_stix
+                                          !-----        if (ndist .eq. 1) non-Maxwellian is used in sigmad_stix
+      integer :: ndisti1 = 0
+      integer :: ndisti2 = 0
+      integer :: ndisti3 = 0
 
       integer :: nmodesx = 32             !-----number of modes used in the x direction
       integer :: nmodesy = 32             !-----number of modes used in the y direction
@@ -68,6 +73,7 @@ c-----      if(iez.eq.1) Ez is set to zero
                                           !-----           if (iprofile .eq. 3) fits of form (1 - rho**beta)**alpha
                                           !-----           if (iprofile .eq. 5) numerical profiles from namelist
 
+      real :: zeffcd = 2.5000E+00       !-----zeffcd=Zeff for Ehst-Karney current drive calculation
       real :: alphan = 1.0
       real :: alphate = 1.0
       real :: alphati = 1.0
@@ -210,8 +216,34 @@ c-----    For black background set ibackground = 1 (box is red)
       real :: psiant = 0.95
       real :: psiplasm = 0.60
 
+      integer :: nboundary = 1            !-----nboundary: if(nboundary .eq. 1)flux surface boundary (default)
+                                          !-----           if(nboundary .eq. 0)square boundary
+
+      integer :: upshift = 1              !-----upshift: if (upshift .ne.  0) upshift is turned on (default)
+                                          !-----if (upshift .eq. -1) upshift is turned off for xkperp > xkperp_cutoff
+                                          !-----if (upshift .eq.  0) upshift is turned off always
+
       integer :: nprow = 8
       integer :: npcol = 8
+
+      integer :: nuper = 65
+      integer :: nupar = 129
+      integer :: nkperp = 201             !-----nkperp: number of kperp values used in Lee's interpolation version of the 
+                                          !     non-Maxwellian sigma (default = 201: interpolates on 201 points)
+                                          !     if (nkperp .eq. 0) there is no interpolation
+
+      integer :: nzeta_wdot = 51          !-----nzeta_wdot:  if (nzeta_wdot .eq. 0) no wdot calculation
+                                          !-----             if (nzeta_wdot .eq. 1) wdot is calculated without interpolation
+                                          !-----             if (nzeta_wdot .ge. 2) wdot is calculated with interpolation
+                                          !-----                 over nzeta_wdot grid points (default is 51)
+      integer :: ftrap = 1                !-----ftrap = integer flag determining whether trapped particles effect current drive
+                                          !        if(ftrap.eq.0) no trapped particles
+                                          !        if(ftrap.ne.0) include trapped particles (default)
+
+      integer :: i_write = 0              !-----i_write: if (i_write .eq. 0) 4-D ORBIT_RF file is NOT written (default)
+                                          !-----         if (i_write .ne. 0) 4-D ORBIT_RF file IS written
+      integer :: n_bin = 2
+
 
       namelist/aorsa3din/nmodesx, nmodesy, nmodesphi, nwdot, lmax,
      .    ibessel, mhel, lhel, nfp, mcap, mcap_number,
@@ -236,6 +268,8 @@ c-----    For black background set ibackground = 1 (box is red)
      .    ekappa, rwleft, rwright,
      .    nphiant, iexpnd, icurve, xnuomg, psilim, psiant, psiplasm,
      .    nstrap, iflag_gammab, theta_ant, strap_width, strap_separ,
-     .    phase_diff, amplt, damping, xkperp_cutoff, iprofile
+     .    phase_diff, amplt, damping, xkperp_cutoff, iprofile,
+     .    nuper, nupar, nkperp, nzeta_wdot, i_write, n_bin, nboundary,
+     .    upshift, ndiste, ndisti1, ndisti2, ndisti3, zeffcd, ftrap
 
       end module aorsa3din_mod
