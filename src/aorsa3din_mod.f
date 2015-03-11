@@ -73,7 +73,6 @@ c-----      if(iez.eq.1) Ez is set to zero
                                           !-----           if (iprofile .eq. 3) fits of form (1 - rho**beta)**alpha
                                           !-----           if (iprofile .eq. 5) numerical profiles from namelist
 
-      real :: zeffcd = 2.5000E+00       !-----zeffcd=Zeff for Ehst-Karney current drive calculation
       real :: alphan = 1.0
       real :: alphate = 1.0
       real :: alphati = 1.0
@@ -270,6 +269,6 @@ c-----    For black background set ibackground = 1 (box is red)
      .    nstrap, iflag_gammab, theta_ant, strap_width, strap_separ,
      .    phase_diff, amplt, damping, xkperp_cutoff, iprofile,
      .    nuper, nupar, nkperp, nzeta_wdot, i_write, n_bin, nboundary,
-     .    upshift, ndiste, ndisti1, ndisti2, ndisti3, zeffcd, ftrap
+     .    upshift, ndiste, ndisti1, ndisti2, ndisti3, ftrap
 
       end module aorsa3din_mod

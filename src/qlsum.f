@@ -743,6 +743,7 @@
     
     deallocate(nres )
     deallocate(mres )
+    deallocate(nphires )
 
     deallocate(zetai)
     deallocate(Jni)
@@ -1513,6 +1514,7 @@
     
     deallocate(nres )
     deallocate(mres )
+    deallocate(nphires )
 
     deallocate(zetai)
     deallocate(Jni)

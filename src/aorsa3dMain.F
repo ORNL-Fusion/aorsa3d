@@ -2515,7 +2515,7 @@ c        enddo
 
                   if (.not.isok) then
                       write(*,*) 'i,j,k ',i,j,k
-                      write(*,*) 'm,nnphi, ',m,n,nphi
+                      write(*,*) 'm,n,nphi, ',m,n,nphi
                       write(*,*) 'ia,ja ', ia,ja
                       stop 'error in main '
                   endif

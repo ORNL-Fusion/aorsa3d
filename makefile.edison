@@ -25,6 +25,8 @@ OBJFILES = \
  $(OBJECT_DIR)/aorsa3din_mod.o \
  $(OBJECT_DIR)/swim_global_data_mod.o \
  $(OBJECT_DIR)/profile_mod.o \
+ $(OBJECT_DIR)/qlsum.o \
+ $(OBJECT_DIR)/ql_myra.o \
  $(OBJECT_DIR)/aorsa3dMain.o \
  $(OBJECT_DIR)/aorsaSubs.o \
  $(OBJECT_DIR)/sigma.o \
@@ -42,31 +44,31 @@ INCFILES = $(SOURCE_DIR)/kron3_mod.f
 COMMON_OPTION  = -save -r8 -i8 -I $(INCLUDE_DIR)
 COMMON_OPTION2  = -r8 -i8 -I $(INCLUDE_DIR)
 
-F77 = ftn $(COMMON_OPTION)
-F90 = ftn -free $(COMMON_OPTION)
+F77 = ftn -c -nofree $(COMMON_OPTION)
+F90 = ftn -c -free $(COMMON_OPTION)
 F90_LOAD = ftn $(COMMON_OPTION)
 
-OPTIMIZATION = 
-OPTIMIZATION4 = $(OPTIMIZATION)
-
-F77FLAGS= -c $(OPTIMIZATION)  -I $(INCLUDE_DIR) 
-F77FLAGS4= -c $(OPTIMIZATION4) -I $(INCLUDE_DIR)
+OPTIMIZATION = -O3 -no-prec-div -fp-model fast=2 -xHost
+F77FLAGS= $(OPTIMIZATION) -I $(INCLUDE_DIR) 
 
 COMPILE = $(F77) $(F77FLAGS)
 COMPILE90 = $(F90) $(F77FLAGS) $(INLINE)
-COMPILE4 = $(F77) $(F77FLAGS4)
 
-LOADFLAGS = 
+LOADFLAGS = -mkl=cluster
 LIBS = -L/global/homes/j/jaegeref/pgplot/5.2/cnl2.0_ifort/pgplot -lpgplot 
 
-LOAD = $(F90_LOAD) $(OPTIMIZATION) $(LOADFLAGS) 
+LOAD = $(F90_LOAD) $(OPTIMIZATION)
 
 # Compile the program
 
 $(EXEC):          $(OBJFILES)
-	          $(LOAD) -o ./$(EXEC)  $(OBJFILES) $(LIBS)
+	          $(LOAD) -o ./$(EXEC)  $(OBJFILES) $(LIBS) $(LOADFLAGS)
 
 # Dependencies
+
+$(OBJECT_DIR)/qlsum.o:  $(SOURCE_DIR)/qlsum.f $(INCFILES)
+	                        $(COMPILE90) -o $(OBJECT_DIR)/qlsum.o \
+                                $(SOURCE_DIR)/qlsum.f
 
 $(OBJECT_DIR)/kron3_mod.o:      $(SOURCE_DIR)/kron3_mod.f $(INCFILES)
 	                        $(COMPILE) -o $(OBJECT_DIR)/kron3_mod.o \
@@ -101,16 +103,20 @@ $(OBJECT_DIR)/zfunction.o:      $(SOURCE_DIR)/zfunction.f $(INCFILES)
                                 $(SOURCE_DIR)/zfunction.f
 
 $(OBJECT_DIR)/ztable.o:         $(SOURCE_DIR)/ztable.f $(INCFILES)
-	                        $(COMPILE90) -free -o $(OBJECT_DIR)/ztable.o \
+	                        $(COMPILE90) -o $(OBJECT_DIR)/ztable.o \
                                 $(SOURCE_DIR)/ztable.f
                                 
 $(OBJECT_DIR)/current.o:        $(SOURCE_DIR)/current.f $(INCFILES)
 	                        $(COMPILE) -o $(OBJECT_DIR)/current.o \
                                 $(SOURCE_DIR)/current.f
+
+$(OBJECT_DIR)/ql_myra.o:        $(SOURCE_DIR)/ql_myra.f $(INCFILES)
+	                        $(COMPILE) -o $(OBJECT_DIR)/ql_myra.o \
+                                $(SOURCE_DIR)/ql_myra.f
                                 
 $(OBJECT_DIR)/wdot.o:           $(SOURCE_DIR)/wdot.f $(INCFILES)
 	                        $(COMPILE) -o $(OBJECT_DIR)/wdot.o \
-                                $(SOURCE_DIR)/wdot.f                                
+                                $(SOURCE_DIR)/wdot.f
 
 $(OBJECT_DIR)/fourier.o:        $(SOURCE_DIR)/fourier.f $(INCFILES)
 	                        $(COMPILE) -o $(OBJECT_DIR)/fourier.o \
@@ -123,7 +129,7 @@ $(OBJECT_DIR)/assert.o:         $(SOURCE_DIR)/assert.f $(INCFILES)
 $(OBJECT_DIR)/descinit.o:       $(SOURCE_DIR)/descinit.f $(INCFILES)
 	                        $(COMPILE) -o $(OBJECT_DIR)/descinit.o \
                                 $(SOURCE_DIR)/descinit.f
-                                                                                                
+                                
 $(OBJECT_DIR)/infog2l.o:        $(SOURCE_DIR)/infog2l.f $(INCFILES)
 	                        $(COMPILE) -o $(OBJECT_DIR)/infog2l.o \
                                 $(SOURCE_DIR)/infog2l.f
@@ -134,7 +140,7 @@ $(OBJECT_DIR)/pxerbla.o:        $(SOURCE_DIR)/pxerbla.f $(INCFILES)
                                 
 $(OBJECT_DIR)/setupblacs.o:     $(SOURCE_DIR)/setupblacs.f $(INCFILES)
 	                        $(COMPILE) -o $(OBJECT_DIR)/setupblacs.o \
-                                $(SOURCE_DIR)/setupblacs.f                                                                                                
+                                $(SOURCE_DIR)/setupblacs.f
 
 $(OBJECT_DIR)/check.o:          $(SOURCE_DIR)/check.f $(INCFILES)
 	                        $(COMPILE) -o $(OBJECT_DIR)/check.o \
