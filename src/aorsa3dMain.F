@@ -4597,16 +4597,16 @@ c     .                                                  k = 1, nnodephi)
      1   35h       total power absorbed (old) = ,1pe12.4,9h watts   )
 
  1109 format(
-     1   3x, 35h      power absorbed by electrons = ,1e12.5,
-     1   9h watts   , 3h = , f10.4, 9h %       /
-     1   3x, 35h  power absorbed by majority ions = ,1e12.5,
-     1   9h watts   , 3h = , f10.4, 9h %       /
-     1   3x, 35h  power absorbed by minority ions = ,1e12.5,
-     1   9h watts   , 3h = , f10.4, 9h %       /
-     1   3x, 35hpower absorbed by 3rd ion species = ,1e12.5,
-     1   9h watts   , 3h = , f10.4, 9h %       /
-     1   3x, 35h             total power absorbed = ,1e12.5,
-     1   9h watts   , 3h = , f10.4, 9h %       )
+     .   3x, 35h      power absorbed by electrons = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       /
+     .   3x, 35h  power absorbed by majority ions = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       /
+     .   3x, 35h  power absorbed by minority ions = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       /
+     .   3x, 35hpower absorbed by 3rd ion species = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       /
+     .   3x, 35h             total power absorbed = ,1e12.5,
+     .   7h Watts , 3h = , f10.4, 9h %       )
 
 71109 format(
      .   3x, 35h      power absorbed by electrons = ,1e12.5,

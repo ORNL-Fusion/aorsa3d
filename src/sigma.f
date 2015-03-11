@@ -108,11 +108,11 @@ c
 
          zetal = (omgrfc - l * omgc) / (xkprl * alpha)
 
-         gammab = l * omgc / (2.0 * alpha * xkprl**2)
-     .        * gradprlb / bmod
+         gammab = abs(l * omgc / (2.0 * alpha * xkprl**2)
+     .        * gradprlb / bmod)
 
 
-         if(abs(gammab) .gt. 1000.0) gammab = 1000.0
+c         if(abs(gammab) .gt. 1000.0) gammab = 1000.0
          if(abs(gammab) .lt. .01)gammab = .01
 
 
@@ -181,7 +181,7 @@ c
      .    i, j, n, m, iflag_gammab
 
       real xkperp, xkprl, xm, q, xn, xkt, omgc, omgp2, xme
-      real xkprl_eff, fgam, y0, sgn_kprl
+      real xkprl_eff, fgam, y0, sgn_kprl, reson
       real dakbdkb, xnuomg, xkprl_cutoff
       real akprl, gammab, rho, alpha, eps0, omgrf, v0i
       real a, b, bmod, gradprlb
@@ -264,11 +264,15 @@ c
       sig5 = 0.0
 
 
-      do l = - 1, 1
+      do l = lmin, lmax
          labs = abs(l)
 
-
-
+         reson = (omgrf - l * omgc) / omgrf
+         if (abs(reson) .lt. 0.02)then
+            zetal = (omgrfc - l * omgc) / (xkprl * alpha)
+         else
+            zetal = (omgrf - l * omgc) / (xkprl * alpha)
+         end if
          zetal = (omgrfc - l * omgc) / (xkprl * alpha)
 
 *        --------------------------------
@@ -394,7 +398,7 @@ c
       real delta0
 
       real xkperp, xkprl, xm, q, xn, xkt, omgc, omgp2, xme
-      real xkprl_eff, fgam, y0, sgn_kprl
+      real xkprl_eff, fgam, y0, sgn_kprl, reson
       real dakbdkb, xnuomg
       real akprl, gammab, rho, alpha, eps0, omgrf, v0i
       real a, b, bmod, gradprlb
@@ -477,34 +481,37 @@ c
       do l = lmin, lmax
          labs = abs(l)
 
-
-
+         reson = (omgrf - l * omgc) / omgrf
+         if (abs(reson) .lt. 0.02)then
             zetal = (omgrfc - l * omgc) / (xkprl * alpha)
+         else
+            zetal = (omgrf - l * omgc) / (xkprl * alpha)
+         end if
 
 
-            gammab = l * omgc / (2.0 * alpha * xkprl**2)
-     .                                            * gradprlb / bmod
-
-
-
-            if(abs(gammab) .gt. 1000.0) gammab = 1000.0
-            if(abs(gammab) .lt. .01)gammab = .01
+         gammab = abs(l * omgc / (2.0 * alpha * xkprl**2)
+     .        * gradprlb / bmod)
 
 
 
-            if (nzfun .eq. 0) call z_approx(sgn_kprl, zetal, 0.0,
-     .                                                     z0, z1, z2)
-            if (nzfun .eq. 1) call z_approx(sgn_kprl, zetal, gammab,
-     .                                                     z0, z1, z2)
-            if (nzfun .eq. 2) call z_smithe(sgn_kprl, zetal, gammab,
-     .                                                     z0, z1, z2)
-            if (nzfun .eq. 3) call z_table(sgn_kprl, zetal, gammab,
-     .                                               .001, z0, z1, z2)
+         if(abs(gammab) .gt. 1000.0) gammab = 1000.0
+         if(abs(gammab) .lt. .01)gammab = .01
 
 
-            al = 1.0 / (xkprl * alpha) * z0
-            bl = 1.0 / (xkprl * alpha) * z1
-            cl = 1.0 / (xkprl * alpha) * z2
+
+         if (nzfun .eq. 0) call z_approx(sgn_kprl, zetal, 0.0,
+     .        z0, z1, z2)
+         if (nzfun .eq. 1) call z_approx(sgn_kprl, zetal, gammab,
+     .        z0, z1, z2)
+         if (nzfun .eq. 2) call z_smithe(sgn_kprl, zetal, gammab,
+     .        z0, z1, z2)
+         if (nzfun .eq. 3) call z_table(sgn_kprl, zetal, gammab,
+     .        .001, z0, z1, z2)
+
+
+         al = 1.0 / (xkprl * alpha) * z0
+         bl = 1.0 / (xkprl * alpha) * z1
+         cl = 1.0 / (xkprl * alpha) * z2
 
 
 
