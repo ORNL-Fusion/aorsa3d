@@ -218,9 +218,6 @@ c-----    For black background set ibackground = 1 (box is red)
       integer :: nboundary = 1            !-----nboundary: if(nboundary .eq. 1)flux surface boundary (default)
                                           !-----           if(nboundary .eq. 0)square boundary
 
-      integer :: upshift = 1              !-----upshift: if (upshift .ne.  0) upshift is turned on (default)
-                                          !-----if (upshift .eq. -1) upshift is turned off for xkperp > xkperp_cutoff
-                                          !-----if (upshift .eq.  0) upshift is turned off always
 
       integer :: nprow = 8
       integer :: npcol = 8
@@ -269,6 +266,6 @@ c-----    For black background set ibackground = 1 (box is red)
      .    nstrap, iflag_gammab, theta_ant, strap_width, strap_separ,
      .    phase_diff, amplt, damping, xkperp_cutoff, iprofile,
      .    nuper, nupar, nkperp, nzeta_wdot, i_write, n_bin, nboundary,
-     .    upshift, ndiste, ndisti1, ndisti2, ndisti3, ftrap
+     .    ndiste, ndisti1, ndisti2, ndisti3, ftrap
 
       end module aorsa3din_mod

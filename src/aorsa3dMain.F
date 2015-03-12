@@ -575,12 +575,39 @@ c        integer, dimension(:,:,:), allocatable :: mask2
       integer indxg2p, indxl2g
       external indxg2p, indxl2g
 
+
+
+* --------------------------
+* setup parallel environment
+* --------------------------
+
+* -----------------------------------------
+* some environment may not require mpi_init
+* -----------------------------------------
+      call mpi_init( info )
+
+
+
       open(unit=63, file='aorsa3d.in',
      &          status='old', form='formatted')
       rewind(63)
 
-c <<  input data
+*     ------------------------ 
+*     Read namelist input data
+*     ------------------------
       read (63, aorsa3din)
+
+
+*     ---------------------------------------------------------
+*     if (mcap_number .gt. 1), set prfin=0.0 so that pscale=1.0
+*     ---------------------------------------------------------
+      if(mcap_number .gt. 1) prfin = 0.0
+
+      if (myid.eq.0) then
+         open(unit=15,file='out15',status='unknown',form='formatted')
+
+         open(unit=34, file='fpm',status='unknown', form='formatted')	
+      endif
 
       idiag = nmodesx / 2
       jdiag = nmodesy / 2
@@ -594,29 +621,14 @@ c <<  input data
 !       --------------------------
         psimask = psilim
 
-      if(mcap_number .gt. 1) prfin = 0.0
-
-* --------------------------
-* setup parallel environment
-* --------------------------
-
-* -----------------------------------------
-* some environment may not require mpi_init
-* -----------------------------------------
-      call mpi_init( info )
-
-      time0 = second1(dummy)
 
       call blacs_pinfo( myid, nproc )
       if (nproc .lt. 1) then
          write(6,*) '** blacs_pinfo returns:myid,nproc',myid,nproc
-         write(15,*) '** blacs_pinfo returns:myid,nproc',myid,nproc
+!         write(15,*) '** blacs_pinfo returns:myid,nproc',myid,nproc
          stop '** blacs not setup '
       endif
       call blacs_get(-1,0,icontxt)
-
-
-
 
 *     --------------------
 *     setup processor grid
@@ -626,12 +638,15 @@ c <<  input data
 *     n x 1 processor grid would simplify eqnx,eqny,eqnz
 *     sqrt(n) x sqrt(n) normally would give best performance
 *     -------------------------------------------------------
-      if (myid .eq. 0) then
-         write(6,*) "setting up processor grid"
-      end if
+
 
       call blacs_gridinit( icontxt, 'column-major', nprow,npcol)
       call blacs_gridinfo( icontxt, nprow, npcol, myrow, mycol)
+
+
+      do 9000 imcap = 1, mcap_number
+
+      time0 = second1(dummy)
 
 *     ----------------------------------------------------------
 *     simplifying assumption that  all processors can open
@@ -657,13 +672,6 @@ c     &            nprow,npcol,nproc
 
 
       if (myid.eq.0) then
-         open(unit=34, file='fpm',status='unknown', form='formatted')	
-      endif
-
-      do 9000 imcap = 1, mcap_number
-
-      if (myid.eq.0) then
-         open(unit=15,file='out15',status='unknown',form='formatted')
          open(unit=38,file='out38',status='unknown',form='formatted')
          open(unit=28,file='out28',status='unknown',form='formatted')
 c         open(unit=29,file='out29',status='unknown',form='formatted')
@@ -715,24 +723,20 @@ c     .        form='formatted')
       if (qavg0 .ne. 0.0) xiota0 = 1./qavg0
 
       q = 1.6e-19
-
       if(te0 .eq. 0.0)te0 = ti0
+
       t0e = te0
       t0i = ti0
+
       teedge = 400.0
 
-      if(myid .eq. 0)then
-         write(15, 1815)t0e
-         write(15, 1821)t0i
-      end if
-
       qhat = qavg0
-
 
       t0e = t0e * q
       t0i = t0i * q
       telim = telim * q
-      tilim  =tilim * q
+      tilim = tilim * q
+
       teedge = teedge * q
 
       xme = 9.11e-31
@@ -798,17 +802,80 @@ c     signb = 1.0
       xn3 = xn0 * eta3
 
       if(myid .eq. 0)then
+
+         write(15, *) "AORSA3D:"
+      	 write(15, *) "mcap_number = ", mcap_number
+         write(15, *) "mcap = ", mcap
+	 
+	 
+         write(6, *) "AORSA3D:"
+         write(6, *) "mcap_number = ", mcap_number
+         write(6, *) "mcap = ", mcap
+
+
+         write (6, *)	         
+         write (6, *) "xkperp_cutoff = ", xkperp_cutoff 	
+         write (6, *) "damping       = ", damping
+	 write (6, *) "upshift = ", upshift  
+
+	 write (6, *)
+         write (6, *) "nnodex  = ", nnodex
+         write (6, *) "nnodey  = ", nnodey
+         write (6, *) "nnodephi = ", nnodey
+
+	 write (6, *)
+	 write (6, *) "nprow   = ", nprow
+         write (6, *) "npcol   = ", npcol
+	 write (6, *)
+	 write (6, *) "prfin     = ", prfin
+	 write (6, *)
+	 write (6, *) "delta0  = ", delta0
+         write (6, *) "xnuomg  = ", xnuomg
+	 write (6, *)
+         write (6, *) "lmax    = ", lmax
+         write (6, *) "zeffcd  = ", zeffcd
+         write (6, *)
+
+
+         write (15, *)	         
+         write (15, *) "xkperp_cutoff = ", xkperp_cutoff 	
+         write (15, *) "damping       = ", damping
+	 write (15, *) "upshift = ", upshift  
+
+	 write (15, *)
+         write (15, *) "nnodex  = ", nnodex
+         write (15, *) "nnodey  = ", nnodey
+         write (15, *) "nnodephi = ", nnodey
+
+	 write (15, *)
+	 write (15, *) "nprow   = ", nprow
+         write (15, *) "npcol   = ", npcol
+	 write (15, *)
+	 write (15, *) "prfin     = ", prfin
+	 write (15, *)
+	 write (15, *) "delta0  = ", delta0
+         write (15, *) "xnuomg  = ", xnuomg
+	 write (15, *)
+         write (15, *) "lmax    = ", lmax
+         write (15, *) "zeffcd  = ", zeffcd
+         write (15, *)
+
+
          write(6, 7013)nmodesx, nmodesy, nmodesphi
          write(6, 7114)mcap(imcap)
          write(6, 7113)nwdot
          write(6, 7213)nnodecx, nnodecy
+
+         write(6, 1815)te0
+         write(6, 1821)ti0
+
          write(6, 7217)qavg0
          write(6, 7014)lmax
          write(6, 7015)ibessel
          write(6, 7115)nzfun
          write(6, 7116)xnuomg
-         write(6, 7016)rhoi1overl
-         write(6, 7017)rhoi10
+c         write(6, 7016)rhoi1overl
+c         write(6, 7017)rhoi10
          write(6, 7217)qavg0
          write(6, 1321)wphase
          write(6, 1323)vthe
@@ -821,9 +888,7 @@ c     signb = 1.0
          write(6, 1813)xn1
          write(6, 1814)xn2
          write(6, 1834)xn3
-         write(6, 6834)eta1
-         write(6, 6835)eta2
-         write(6, 6836)eta3
+
          write(6, 1012)omgrf
          write(6, 1009)xnurf
          write(6, 1321)wphase
@@ -835,19 +900,26 @@ c     signb = 1.0
          write(6, 1018)xnu2ad
          write(6, 1020)nnodex, nnodey
 
+	 write(6, *) "iprofile = ", iprofile
+         write(6, *) "psilim = ", psilim
+
 
          write(15, 162)
          write(15, 7013)nmodesx, nmodesy, nmodesphi
          write(15, 7114)mcap(imcap)
          write(15, 7113)nwdot
          write(15, 7213)nnodecx, nnodecy
+
+         write(15, 1815)t0e
+         write(15, 1821)t0i
+
          write(15, 7217)qavg0
          write(15, 7014)lmax
          write(15, 7015)ibessel
          write(15, 7115)nzfun
          write(15, 7116)xnuomg
-         write(15, 7016)rhoi1overl
-         write(15, 7017)rhoi10
+c         write(15, 7016)rhoi1overl
+c         write(15, 7017)rhoi10
          write(15, 7217)qavg0
          write(15, 1321)wphase
          write(15, 1323)vthe
@@ -860,9 +932,7 @@ c     signb = 1.0
          write(15, 1813)xn1
          write(15, 1814)xn2
          write(15, 1834)xn3
-         write(15, 6834)eta1
-         write(15, 6835)eta2
-         write(15, 6836)eta3
+
          write(15, 1012)omgrf
          write(15, 1009)xnurf
          write(15, 1321)wphase
@@ -873,6 +943,9 @@ c     signb = 1.0
          write(15, 1017)xnu1ad
          write(15, 1018)xnu2ad
          write(15, 1020)nnodex, nnodey
+
+	 write(15, *) "iprofile = ", iprofile
+         write(15, *) "psilim = ", psilim
       end if
 
 *     ------------------------------------
@@ -3675,7 +3748,7 @@ c
      .   zeffcd, clight, x, y, rt, b0, ftrap, omgrf,
      .   nkperp, lmaxdim, nzeta_wdot, theta_, 
      .   n_theta_max, n_psi_max, i_psi_eq, n_theta_, dldbavg, 
-     .   n_bin, upshift, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
+     .   n_bin, 1, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 
 
@@ -3705,7 +3778,7 @@ c
      .   zeffcd, clight, x, y, rt, b0, ftrap, omgrf,
      .   nkperp, lmaxdim, nzeta_wdot, theta_,
      .   n_theta_max, n_psi_max, i_psi_eq, n_theta_, dldbavg,
-     .   n_bin, upshift, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
+     .   n_bin, 1, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
       ! ------------------ !
       ! --Minority ions -- !
@@ -3734,7 +3807,7 @@ c
      .   zeffcd, clight, x, y, rt, b0, ftrap, omgrf,
      .   nkperp, lmaxdim, nzeta_wdot, theta_,
      .   n_theta_max, n_psi_max, i_psi_eq, n_theta_, dldbavg,
-     .   n_bin, upshift, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
+     .   n_bin, 1, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
       end if
 
       ! --------------------- !
@@ -3764,7 +3837,7 @@ c
      .   zeffcd, clight, x, y, rt, b0, ftrap, omgrf,
      .   nkperp, lmaxdim, nzeta_wdot, theta_,
      .   n_theta_max, n_psi_max, i_psi_eq, n_theta_, dldbavg,
-     .   n_bin, upshift, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
+     .   n_bin, 1, i_write, xkx_cutoff, xky_cutoff, xkz_cutoff)
       end if
 
 
@@ -4809,6 +4882,34 @@ c     .                                                  k = 1, nnodephi)
      1                         7x, 'Re Ez', 7x, 'Im Ez')
 
       call blacs_barrier(icontxt, 'All')
+
+!     -----------------
+!     deallocate arrays
+!     -----------------
+      if(ndisti1   .eq. 0 .and.
+     .   ndisti2   .eq. 0 .and.
+     .   ndisti3   .eq. 0 .and.
+     .   ndiste    .eq. 0)   then
+
+         deallocate( UPERP )
+         deallocate( UPARA )
+	 
+         deallocate( UPERP_work )
+         deallocate( UPARA_work )
+	 
+         deallocate( dfdupere )
+         deallocate( dfdupare )
+	 
+         deallocate( dfduper1 )
+         deallocate( dfdupar1 )
+	 
+	 deallocate( dfduper2 )
+         deallocate( dfdupar2 )
+	 
+	 deallocate( dfduper3 )
+         deallocate( dfdupar3 )
+
+      end if
 
       deallocate( mask )
       deallocate( inv_xx )
