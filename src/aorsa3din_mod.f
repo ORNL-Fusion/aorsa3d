@@ -5,6 +5,9 @@
 !     --------------------------------------------------------
 !     Declarations and defaults for aorsa3d.in input variables
 !     --------------------------------------------------------
+      logical :: anti_alias = .false.     !-----if (anti_alias .eq. .false.) no filter:  keep all modes (default)                                 
+                                          !-----if (anti_alias .eq. .true. ) anti-aliasing filter (two-thirds rule):	
+
       integer :: iwout = 0                ! if (iwout .eq. 0) NetCDF
                                           ! if (iwout .eq. 1) ascii
       character*128 :: wout = ' '         ! wout file name
@@ -273,6 +276,6 @@ c-----    For black background set ibackground = 1 (box is red)
      .    phase_diff, amplt, damping, xkperp_cutoff, iprofile,
      .    nuper, nupar, nkperp, nzeta_wdot, i_write, n_bin, nboundary,
      .    ndiste, ndisti1, ndisti2, ndisti3, ftrap,
-     .    iwout, wout, wout_bscale
+     .    iwout, wout, wout_bscale, anti_alias
 
       end module aorsa3din_mod

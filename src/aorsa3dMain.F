@@ -18,6 +18,8 @@
 
       implicit none
 
+      integer n_upper, n_lower, m_upper, m_lower, l_upper, l_lower
+
       integer iflag
       integer imcap
       integer nxmx, nymx, nphimx, ieq, jcol
@@ -375,8 +377,6 @@ c***  3-D arrays:
       complex adisp(nxmx, nymx), acold(nxmx, nymx)
       real reson1(nxmx, nymx, nphimx),
      .     reson2(nxmx, nymx, nphimx)
-
-      complex xjpx2d(nxmx, nymx), xjpy2d(nxmx, nymx), xjpz2d(nxmx, nymx)
 
       complex bxwave(nxmx, nymx), bywave(nxmx, nymx), bzwave(nxmx, nymx)
       real spx(nxmx, nymx), spy(nxmx, nymx), spz(nxmx, nymx)
@@ -3376,8 +3376,28 @@ c--   Operations for complex matrix factor and solve:
         enddo
         enddo
 
-      t1 = second1(dummy)
 
+      call blacs_barrier(icontxt, 'All')
+      
+!     --------------------------------
+!     write out solution in real space
+!     --------------------------------
+
+      if (myid .eq.0) then
+         write(53,8310)(((ealpha(i,j,k),i=1,nnodex),
+     &                 j=1,nnodey),k=1,nnodephi)
+         write(53,8310)(((ebeta(i,j,k),i=1,nnodex),
+     &                 j=1,nnodey),k=1,nnodephi)
+         write(53,8310)(((eb(i,j,k),i=1,nnodex),
+     &                 j=1,nnodey),k=1,nnodephi)
+
+         close(53)
+      end if
+
+ 8310 format(1p6e14.6)
+
+
+      t1 = second1(dummy)
 
 *     ------------------------------------------
 *     Fourier transform the Stix electric fields:
@@ -3404,16 +3424,67 @@ c--   Operations for complex matrix factor and solve:
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, xx, yy, zz,
      .   xmax, ymax, phimax, dx,dy, dphi)
 
-      time = second1(dummy) - t1
-      tmin = time / 60.
+      if (anti_alias .eq. .true.) then
+*        --------------------------------------
+*        Anti-aliasing filter (two-thirds rule):
+*        --------------------------------------      
+         n_upper = 2. / 3. * nkx2
+         n_lower = 2. / 3. * nkx1      
+         m_upper = 2. / 3. * nky2
+         m_lower = 2. / 3. * nky1
+         l_upper = 2. / 3. * nphi2
+         l_lower = 2. / 3. * nphi1
+           
+         if (myid .eq. 0) then
+         write(6, *) "n_lower = ", n_lower, "   n_upper = ", n_upper
+         write(6, *) "m_lower = ", m_lower, "   m_upper = ", m_upper
+         write(6, *) "l_lower = ", l_lower, "   l_upper = ", l_upper
+         end if
 
-      if(myid .eq. 0)then
-         write(6, 1837)  tmin
-         write(15, 1837) tmin
+         do nphi = nphi1, nphi2
+            do n = nkx1, nkx2
+               do m = nky1, nky2	
+
+                  if (n .gt. n_upper .or. n .lt. n_lower .or.
+     .                m .gt. m_upper .or. m .lt. m_lower .or.
+     .                nphi .gt. l_upper .or. nphi .lt. l_lower)then
+
+                     ealphak(n, m, nphi) = 0.0
+                     ebetak(n, m, nphi) = 0.0
+                     ebk(n, m, nphi) = 0.0
+                  end if
+
+               end do
+            end do
+         end do
+
+         ealpha = 0.0
+         ebeta  = 0.0
+         eb     = 0.0
+
+*        ---------------------------------------
+*        Invert Fourier transform to real space:
+*        ---------------------------------------
+
+         call fftinv3d_kron(x, y, phi, xkxsav, xkysav, xkzsav,
+     .        ealpha, ealphak, nxmx, nymx, nphimx,
+     .        nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
+     .        nnodex, nnodey, nnodephi,
+     .        nkx1, nkx2, nky1, nky2, nphi1, nphi2, xx, yy, zz)
+
+         call fftinv3d_kron(x, y, phi, xkxsav, xkysav, xkzsav,
+     .        ebeta, ebetak, nxmx, nymx, nphimx,
+     .        nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
+     .        nnodex, nnodey, nnodephi,
+     .        nkx1, nkx2, nky1, nky2, nphi1, nphi2, xx, yy, zz)
+
+         call fftinv3d_kron(x, y, phi, xkxsav, xkysav, xkzsav,
+     .        eb, ebk, nxmx, nymx, nphimx,
+     .        nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
+     .        nnodex, nnodey, nnodephi,
+     .        nkx1, nkx2, nky1, nky2, nphi1, nphi2, xx, yy, zz)
+
       end if
-
- 1837 format('time taken to Fourier transform the fields =',f9.3,4h min)
-
 
       do nphi = nphi1, nphi2
          do n = nkx1, nkx2
@@ -3443,37 +3514,6 @@ c--   Operations for complex matrix factor and solve:
          end do
       end do
 
-
-
-
-      if (myid .eq.0) then
-         write(53,8310)(((ealpha(i,j,k),i=1,nnodex),
-     &                 j=1,nnodey),k=1,nnodephi)
-         write(53,8310)(((ebeta(i,j,k),i=1,nnodex),
-     &                 j=1,nnodey),k=1,nnodephi)
-         write(53,8310)(((eb(i,j,k),i=1,nnodex),
-     &                 j=1,nnodey),k=1,nnodephi)
-
-         close(53)
-      end if
-
- 8310 format(1p6e14.6)
-
-
-
-      if (isolve .eq. 0) then
-
-         read(53, 309) nnodex, nnodey, nnodephi
-         read(53,8310)(((ealpha(i,j,k),i=1,nnodex),
-     &                 j=1,nnodey),k=1,nnodephi)
-         read(53,8310)(((ebeta(i,j,k),i=1,nnodex),
-     &                 j=1,nnodey),k=1,nnodephi)
-         read(53,8310)(((eb(i,j,k),i=1,nnodex),
-     &                 j=1,nnodey),k=1,nnodephi)
-
-         close(53)
-      end if
-
 !       -----------------------------------
 !       write out solution in Fourier modes
 !       -----------------------------------
@@ -3495,7 +3535,15 @@ c         close(54)
 
 c      end if
 
+      time = second1(dummy) - t1
+      tmin = time / 60.
 
+      if(myid .eq. 0)then
+         write(6, 1837)  tmin
+         write(15, 1837) tmin
+      end if
+
+ 1837 format('time taken to Fourier transform the fields =',f9.3,4h min)
 
 c     ------------------------
 c     Calculate E in Lab frame
@@ -3627,7 +3675,7 @@ c
       t1 = second1(dummy)
      
       call ntilda_(ntilda_e, nxmx, nymx, nphimx,
-     .   xjpx2d, gradprlb,
+     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
@@ -3645,7 +3693,7 @@ c
      .   iflag_gammab)
 
       call current_elect(xjpxe, xjpye, xjpze, nxmx, nymx, nphimx,
-     .   xjpx2d, xjpy2d, xjpz2d, gradprlb,
+     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
@@ -3665,7 +3713,7 @@ c
 
 
       call current(xjpx1, xjpy1, xjpz1, nxmx, nymx, nphimx,
-     .   xjpx2d, xjpy2d, xjpz2d, gradprlb,
+     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
@@ -3683,7 +3731,7 @@ c
 
       if(eta2 .ne. 0.0)
      .   call current(xjpx2, xjpy2, xjpz2, nxmx, nymx, nphimx,
-     .      xjpx2d, xjpy2d, xjpz2d, gradprlb,
+     .      gradprlb,
      .      nnodex, nnodey, nnodephi,
      .      nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .      nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
@@ -3702,7 +3750,7 @@ c
 
       if(eta3 .ne. 0.0)
      .   call current(xjpx3, xjpy3, xjpz3, nxmx, nymx, nphimx,
-     .      xjpx2d, xjpy2d, xjpz2d, gradprlb,
+     .      gradprlb,
      .      nnodex, nnodey, nnodephi,
      .      nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .      nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,

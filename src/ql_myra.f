@@ -700,42 +700,17 @@ c$$$               end do
 !     Sum over processors
 !     -------------------
 
-      do k = 1, nnodephi
+      call dgsum2d(icontxt, 'All', ' ', nnodex * nnodey, nnodephi,
+     .     wdot, nnodex * nnodey, -1, -1)
 
-         do i = 1, nnodex
-            do j = 1, nnodey
-               wdot2d(i, j) = wdot(i, j, k)
-               fx02d(i, j) = fx0(i, j, k)
-               fy02d(i, j) = fy0(i, j, k)
-               fz02d(i, j) = fz0(i, j, k)
-            end do
-         end do
+      call dgsum2d(icontxt, 'All', ' ', nnodex * nnodey, nnodephi,
+     .     fx0, nnodex * nnodey, -1, -1)
 
-!      call dgsum2d(icontxt, 'All', ' ', 5001, 1, count,
-!     .      5001, -1, -1)
+      call dgsum2d(icontxt, 'All', ' ', nnodex * nnodey, nnodephi,
+     .     fy0, nnodex * nnodey, -1, -1)
 
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey, wdot2d,
-     .        nnodex, -1, -1)
-         
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey, fx02d,
-     .        nnodex, -1, -1)
-         
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey, fy02d,
-     .        nnodex, -1, -1)
-         
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey, fz02d,
-     .        nnodex, -1, -1)
-         
-         do i = 1, nnodex
-            do j = 1, nnodey
-               wdot(i, j, k) = wdot2d(i, j)
-               fx0(i, j, k) = fx02d(i, j)
-               fy0(i, j, k) = fy02d(i, j)
-               fz0(i, j, k) = fz02d(i, j)
-            end do
-         end do
-
-      end do
+      call dgsum2d(icontxt, 'All', ' ', nnodex * nnodey, nnodephi,
+     .     fz0, nnodex * nnodey, -1, -1)
      
 c$$$      do n = 1, nnoderho
 c$$$

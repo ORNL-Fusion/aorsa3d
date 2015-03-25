@@ -2,7 +2,7 @@ c
 c***************************************************************************
 c
       subroutine ntilda_(ntilda, nxmx, nymx, nphimx,
-     .   xjpx2d, gradprlb,
+     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, nphidim1, nphidim2,
@@ -56,8 +56,6 @@ c
      .     uzy(nxmx, nymx, nphimx),
      .     uzz(nxmx, nymx, nphimx)
 
-
-      complex xjpx2d(nxmx, nymx)
 
       real bmod(nxmx, nymx, nphimx), signb, dum
       real xm, omgc, omgp2, eps0, xnuomg
@@ -153,26 +151,8 @@ c      zi = cmplx(0.0, 1.0)
 
       call blacs_barrier(icontxt, 'All')
 
-
-      do k = 1, nnodephi
-
-         do i = 1, nnodex
-            do j = 1, nnodey
-               xjpx2d(i, j) = ntilda(i, j, k)
-            end do
-         end do
-
-         call zgsum2d(icontxt, 'All', ' ', nnodex, nnodey, xjpx2d,
-     .      nxmx, -1, -1)
-
-         do i = 1, nnodex
-            do j = 1, nnodey
-               ntilda(i, j, k) = xjpx2d(i, j)
-            end do
-         end do
-
-      end do
-
+      call zgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     ntilda, nxmx * nymx, -1, -1)
 
       return
       end
@@ -181,7 +161,7 @@ c***************************************************************************
 c
 
       subroutine current_elect(xjpx, xjpy, xjpz, nxmx, nymx, nphimx,
-     .   xjpx2d, xjpy2d, xjpz2d, gradprlb,
+     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, nphidim1, nphidim2,
@@ -238,10 +218,6 @@ c
      .     uzy(nxmx, nymx, nphimx),
      .     uzz(nxmx, nymx, nphimx)
 
-
-      complex xjpx2d(nxmx, nymx),
-     .        xjpy2d(nxmx, nymx),
-     .        xjpz2d(nxmx, nymx)
 
       real bmod(nxmx, nymx, nphimx), signb, dum
       real xm, omgc, omgp2, eps0, xnuomg
@@ -375,34 +351,12 @@ c      zi = cmplx(0.0, 1.0)
 
       call blacs_barrier(icontxt, 'All')
 
-
-      do k = 1, nnodephi
-
-         do i = 1, nnodex
-            do j = 1, nnodey
-               xjpx2d(i, j) = xjpx(i, j, k)
-               xjpy2d(i, j) = xjpy(i, j, k)
-               xjpz2d(i, j) = xjpz(i, j, k)
-            end do
-         end do
-
-         call zgsum2d(icontxt, 'All', ' ', nnodex, nnodey, xjpx2d,
-     .      nxmx, -1, -1)
-         call zgsum2d(icontxt, 'All', ' ', nnodex, nnodey, xjpy2d,
-     .      nxmx, -1, -1)
-         call zgsum2d(icontxt, 'All', ' ', nnodex, nnodey, xjpz2d,
-     .      nxmx, -1, -1)
-
-         do i = 1, nnodex
-            do j = 1, nnodey
-               xjpx(i, j, k) = xjpx2d(i, j)
-               xjpy(i, j, k) = xjpy2d(i, j)
-               xjpz(i, j, k) = xjpz2d(i, j)
-            end do
-         end do
-
-      end do
-
+      call zgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     xjpx, nxmx * nymx, -1, -1)
+      call zgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     xjpy, nxmx * nymx, -1, -1)
+      call zgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     xjpz, nxmx * nymx, -1, -1)
 
       return
 
@@ -417,7 +371,7 @@ c***************************************************************************
 c
 
       subroutine current(xjpx, xjpy, xjpz, nxmx, nymx, nphimx,
-     .   xjpx2d, xjpy2d, xjpz2d, gradprlb,
+     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, nphidim1, nphidim2,
@@ -472,10 +426,6 @@ c
      .     uzy(nxmx, nymx, nphimx),
      .     uzz(nxmx, nymx, nphimx)
 
-
-      complex xjpx2d(nxmx, nymx),
-     .        xjpy2d(nxmx, nymx),
-     .        xjpz2d(nxmx, nymx)
 
       real bmod(nxmx, nymx, nphimx), signb, dum
       real xm, omgc, omgp2, eps0, xnuomg
@@ -608,34 +558,12 @@ c      zi = cmplx(0.0, 1.0)
 
       call blacs_barrier(icontxt, 'All')
 
-
-      do k = 1, nnodephi
-
-         do i = 1, nnodex
-            do j = 1, nnodey
-               xjpx2d(i, j) = xjpx(i, j, k)
-               xjpy2d(i, j) = xjpy(i, j, k)
-               xjpz2d(i, j) = xjpz(i, j, k)
-            end do
-         end do
-
-         call zgsum2d(icontxt, 'All', ' ', nnodex, nnodey, xjpx2d,
-     .      nxmx, -1, -1)
-         call zgsum2d(icontxt, 'All', ' ', nnodex, nnodey, xjpy2d,
-     .      nxmx, -1, -1)
-         call zgsum2d(icontxt, 'All', ' ', nnodex, nnodey, xjpz2d,
-     .      nxmx, -1, -1)
-
-         do i = 1, nnodex
-            do j = 1, nnodey
-               xjpx(i, j, k) = xjpx2d(i, j)
-               xjpy(i, j, k) = xjpy2d(i, j)
-               xjpz(i, j, k) = xjpz2d(i, j)
-            end do
-         end do
-
-      end do
-
+      call zgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     xjpx, nxmx * nymx, -1, -1)
+      call zgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     xjpy, nxmx * nymx, -1, -1)
+      call zgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     xjpz, nxmx * nymx, -1, -1)
 
       return
 

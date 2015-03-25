@@ -263,8 +263,6 @@ c
       integer i, j, k, ngrid
       real dx, dy, dphi, phimax
 
-      real, allocatable, dimension(:, :, :) :: work
-
       real, parameter :: pi = 3.141592654
 
       if (iwout .eq. 0) then
@@ -511,48 +509,20 @@ c
 
       call blacs_barrier(icontxt, 'All')
 
-      allocate(work(nnodex, nnodey, 7))
-      do k = 1, nnodephi
-         do i = 1, nnodex
-            do j = 1, nnodey
-               work(i, j, 1) = rho(i, j, k)
-               work(i, j, 2) = psi(i, j, k)
-               work(i, j, 3) = thetap(i, j, k)
-               work(i, j, 4) = bmod(i, j, k)
-               work(i, j, 5) = bxn(i, j, k)
-               work(i, j, 6) = byn(i, j, k)
-               work(i, j, 7) = bzn(i, j, k)
-            end do
-         end do
-
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey,
-     .        work(1, 1, 1), nnodex, -1, -1)
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey,
-     .        work(1, 1, 2), nnodex, -1, -1)
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey,
-     .        work(1, 1, 3), nnodex, -1, -1)
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey,
-     .        work(1, 1, 4), nnodex, -1, -1)
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey,
-     .        work(1, 1, 5), nnodex, -1, -1)
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey,
-     .        work(1, 1, 6), nnodex, -1, -1)
-         call dgsum2d(icontxt, 'All', ' ', nnodex, nnodey,
-     .        work(1, 1, 7), nnodex, -1, -1)
-
-         do i = 1, nnodex
-            do j = 1, nnodey
-               rho(i, j, k) = work(i, j, 1)
-               psi(i, j, k) = work(i, j, 2)
-               thetap(i, j, k) = work(i, j, 3)
-               bmod(i, j, k) = work(i, j, 4)
-               bxn(i, j, k) = work(i, j, 5)
-               byn(i, j, k) = work(i, j, 6)
-               bzn(i, j, k) = work(i, j, 7)
-            end do
-         end do
-      end do
-      deallocate(work)
+      call dgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     rho, nxmx * nymx, -1, -1)
+      call dgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     psi, nxmx * nymx, -1, -1)
+      call dgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     thetap, nxmx * nymx, -1, -1)
+      call dgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     bmod, nxmx * nymx, -1, -1)
+      call dgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     bxn, nxmx * nymx, -1, -1)
+      call dgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     byn, nxmx * nymx, -1, -1)
+      call dgsum2d(icontxt, 'All', ' ', nxmx * nymx, nnodephi,
+     .     bzn, nxmx * nymx, -1, -1)
 
       rt = (rwleft + rwright) * 0.5
       b0 = bmod(nnodex / 2, nnodey / 2, nnodephi / 2)
