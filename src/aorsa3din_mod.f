@@ -116,21 +116,26 @@ c-----flat=1.0 gives flat profiles
       real :: curdny = 1.0                !-----Amps/meter of toroidal length of antenna in the y direction
       real :: curdnz = 0.0000E+00         !-----Amps/meter of toroidal length of antenna in the z direction
 
-      integer :: icurve = 0
-      real :: rant = 1.6                  !-----major radius of antenna in meters
-      real :: yant = .1                   !-----half height of antenna in meters
+      integer :: i_antenna = 1            ! i_antenna = flag determining which antenna model is used
+                                          ! if(i_antenna .eq. 0) antenna current is Gaussian 
+                                          ! if(i_antenna .eq. 1) antenna current is cos(ky * y)  (default)
+                                          ! where ky = omgrf / vphase = (omgrf / clight) * antlc = k0 * antlc
+                                          ! For constant current, set antlc = 0.0
+      integer :: icurve = 0               !-----not used
+      real :: rant = 0.0                  !-----rant = major radius of antenna in meters (default is 0.0 in which case, psiant = .95)
+      real :: yant = 0.0                  !-----yant = location of antenna center in Z (m)
       real :: dpsiant0 = .02
-      real :: theta_ant = 0.0             !-----poloidal angle at which the antenna sits (degrees)
-c           if(theta_ant .eq. 0.) antenna is on low field side or right (default)
-c           if(theta_ant .eq. 180.) antenna is on high field side or left
+      real :: antlen = 1.0
+      real :: antlc = .0001               !-----antlc = propagation constant along the antenna = c / vphase
+      real :: theta_ant = 0.0             !-----not used
       real :: dthetant0 = 40.
       real :: dphiant0 = 5.0              !-----not used
-      integer :: nstrap = 1
       integer :: nphiant = 24             !-----not used
-      real :: strap_width = 0.1524
-      real :: strap_separ = 0.4572
-      real :: phase_diff = 180.0
-      real :: amplt(2) = 1.0
+      integer :: nstrap = 4               ! number of current straps in antenna 
+      real :: xlt = 20.0E-02              ! width of current strap (m)
+      real :: wd = 50.0E-02               ! separation between centers of antenna elements
+      real :: phase_deg(20) = 0.0         ! phase of elements
+      real :: amplt(20) = 1.0
 
       integer :: igeom = 2
 c-----igeom: if(igeom.eq.1)Solovev flux surfaces
@@ -272,8 +277,9 @@ c-----    For black background set ibackground = 1 (box is red)
      .    alphan, alphate, alphati, betan, betate, betati,
      .    ekappa, rwleft, rwright, ytop, ybottom,
      .    nphiant, iexpnd, icurve, xnuomg, psilim, psiant, psiplasm,
-     .    nstrap, iflag_gammab, theta_ant, strap_width, strap_separ,
-     .    phase_diff, amplt, damping, xkperp_cutoff, iprofile,
+     .    nstrap, iflag_gammab, theta_ant,
+     .    xlt, wd, phase_deg, amplt, antlen, antlc,
+     .    damping, xkperp_cutoff, iprofile,
      .    nuper, nupar, nkperp, nzeta_wdot, i_write, n_bin, nboundary,
      .    ndiste, ndisti1, ndisti2, ndisti3, ftrap,
      .    iwout, wout, wout_bscale, anti_alias

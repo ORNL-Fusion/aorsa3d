@@ -289,12 +289,10 @@ c***  3-D arrays:
      .     xkperp, xketa,
      .     ptot, ptot_wdot, pcito2, pcrto2, powtot, pscale,
      .     cosalp, sinalp, t1, gaussian, frho, q07qa, psimax,
-     .     rhomax, xnprl, rhoant, gausspsi,
-     .     dthetant, dphiant, dpsiant, gausstheta,
-     .     gaussthetap, gaussanty
+     .     rhomax, xnprl, rhoant, gausspsi, dpsiant, gaussthetap,
+     .     deltay, shapey, yant_max, zstrap, zn, rant1
       real phiant, xjymax, modxjy
-      real dphase, phiant1, phiant2, phase1, phase2
-      complex gaussphi(nphimx)
+      complex shapephi(nphimx)
 
       real ealphakmod(nkdim1 : nkdim2, mkdim1 : mkdim2),
      .     ebetakmod(nkdim1 : nkdim2, mkdim1 : mkdim2),
@@ -1201,6 +1199,7 @@ c         write(6, 1312)n, rhon(n)
 
       xant = rant - rt
       iant=int((rant - rwleft) / dx) + 1
+      if (rant .ne. 0.0) psiant = psi(iant, jdiag, kdiag)
 
 c--note curden is in Amps per meter of toroidal length (2.*pi*rt).
       xjantx = curdnx / dx
@@ -1596,20 +1595,9 @@ c     .               / rhonorm
 *     ------------------------------
 
       dpsiant = dpsiant0
-      dthetant = dthetant0 / 360. * 2.0 * pi
-      dphiant  = dphiant0 / 360. * 2.0 * pi
+      yant_max = antlen / 2.0
 
       phiant = pi / nfp
-
-      dphi_rt = strap_separ / rt
-      phiant1 = phiant - dphi_rt / 2.0
-      phiant2 = phiant + dphi_rt / 2.0
-
-      dphase = phase_diff / 360. * 2.0 * pi
-      phase1 = 0.0
-      phase2 = phase1 + dphase
-
-      dphiant = strap_width / rt
 
       if(myid .eq. 0)then
          write(15, 920)
@@ -1621,17 +1609,31 @@ c     .               / rhonorm
          write(6, 920)
       end if
 
-      do k = 1, nnodephi
-         if(nstrap .eq. 1)gaussphi(k) =
-     .        exp(-(phiprime(k) - phiant)**2 / dphiant**2)
+      if (rant .ne. 0.0) then
+         rant1 = rant
+      else
+         do i = nnodex, 1, -1
+            if (psi(i, jdiag, kdiag) .lt. psiant) then
+               rant1 = capr(i)
+               exit
+            end if
+         end do
+      end if
+      if (myid .eq. 1) then
+         write(6, *) "rant1 =", rant1
+      end if
 
-         if(nstrap .eq. 2)gaussphi(k) =
-     .        exp(-(phiprime(k) - phiant1)**2 / dphiant**2)
-     .        * exp(zi * phase1) * amplt(1)
-     .      + exp(-(phiprime(k) - phiant2)**2 / dphiant**2)
-     .        * exp(zi * phase2) * amplt(2)
-         if(myid .eq. 0)write(6, 1312) k, gaussphi(k)
-         if(myid .eq. 0)write(15, 1312) k, gaussphi(k)
+      do k = 1, nnodephi
+         do i = 1, nstrap
+            zstrap = (i - 1.0 - (nstrap - 1) / 2.0) * wd
+            zn = (phiprime(k) - phiant) * rant1
+            if (abs(zn - zstrap) .lt. (xlt / 2.0))
+     .           shapephi(k) = amplt(i)
+     .           * exp(zi * phase_deg(i) * pi / 180.)
+         end do
+
+         if(myid .eq. 0)write(6, 1312) k, shapephi(k)
+         if(myid .eq. 0)write(15, 1312) k, shapephi(k)
       end do
 
 
@@ -1641,60 +1643,46 @@ c        allocate( mask2(1:nnodex,1:nnodey,1:nnodephi) )
 
       do i = 1, nnodex
          do j = 1, nnodey
-            gausstheta = exp(-(theta0(i,j) - 0.0)**2 / dthetant**2)
-
-
             do k = 1, nnodephi
 
-               gausspsi  = exp(-(psi(i,j,k) - psiant)**2 / dpsiant**2)
+               gausspsi = exp(-(psi(i,j,k) - psiant)**2 / dpsiant**2)
 
+               shapey = 0.0
+               deltay = y(j) - yant
 
-               gaussthetap  = exp(-(cos(thetap(i,j,k))
-     .                      - cos(theta_antr))**2 / (sin(dthetant))**2)
-
-
-
-               gaussanty = exp(- y(j)**2 / yant**2)
-
-               cexpant = exp(zi * nphiant * phiprime(k))
-
-
-               xjx(i,j,k) = 0.0
-               xjy(i,j,k) = 0.0
-               xjz(i,j,k) = 0.0
-
-               if(icurve .eq. 0)then
-                  if(i .eq. iant)then
-                     xjx(i,j,k) = 0.0
-
-c                    xjy(i,j,k) = xjanty * gaussanty**2 * real(cexpant)
-                     xjy(i,j,k) = xjanty * gaussanty**2 * gaussphi(k)
-
-                     xjz(i,j,k) = 0.0
-                  end if
+               if(capr(i) .gt. rt) then
+*              ------------------------------------------------
+*              if(i_antenna .eq. 0) antenna current is Gaussian
+*              ------------------------------------------------ 
+	       
+	       if (i_antenna .eq. 0) then
+	          shapey = exp(-deltay**2 / yant_max**2)
+	       end if
+	       
+	                    
+*              ---------------------------------------------------------------
+*              if(i_antenna .eq. 1) antenna current is cos(ky * y)  (DEFAULT)
+*              ------------------------------------------------ --------------
+	       if (i_antenna .eq. 1 .and. abs(deltay) .lt. yant_max)then
+	          shapey = cos(xk0 * antlc * deltay)
+	       end if
                end if
 
+               xjx(i,j,k) = xjantx * shapey * gausspsi * shapephi(k)
+               xjy(i,j,k) = xjanty * shapey * gausspsi * shapephi(k)
+               xjz(i,j,k) = xjantz * shapey * gausspsi * shapephi(k)
 
-               if(icurve .eq. 1)then
-                  xjx(i,j,k) = xjanty * gausstheta * gausspsi
-     .               * gaussphi(k) * sin(theta0(i,j)) * (-1.0)
-                  xjy(i,j,k) = xjanty * gausstheta * gausspsi
-     .               * gaussphi(k) * cos(theta0(i,j))
-                  xjz(i,j, k) = 0.0
-               end if
+            end do
+         end do
+      end do
 
 
-               if(icurve .eq. 2)then
-                  xjx(i,j,k) = 0.0
-
-                xjy(i,j,k) =
-     .              xjanty * gaussthetap**2 * gausspsi * gaussphi(k)
-
-c                 xjy(i,j,k) =
-c     .               xjanty * gaussthetap**2 * gausspsi * real(cexpant)
-
-                  xjz(i,j,k) = 0.0
-               end if
+*    ----------------
+*    plasma profiles:
+*    ----------------
+      do i = 1, nnodex
+         do j = 1, nnodey
+            do k = 1, nnodephi
 
                if (iprofile .eq. 1) then
                   gaussian =  exp(-psi(i,j,k) / psiplasm)
@@ -4869,7 +4857,7 @@ c     .                                                  k = 1, nnodephi)
      1           6x,6h      ,6x,6h      ,6x,6h      ,
      1           6x,6h      ,6x,6h      ,6x,6h      , 6x,6h      )
 
- 8165 format(1h ,3x,6h     k,3x,8hgaussphi,
+ 8165 format(1h ,3x,6h     k,3x,8hshapephi,
      1           6x,6h      ,6x,6h      ,6x,6h      ,
      1           6x,6h      ,6x,6h      ,6x,6h      , 6x,6h      )
 
