@@ -29,9 +29,7 @@
 
       integer nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2
 
-      integer nkx1, nkx2, nldim, nldim3,
-     .   nky1, nky2, iant, jant1, jant2,
-     .   nphi1, nphi2
+      integer nkx1, nkx2, nldim, nldim3, nky1, nky2, iant, nphi1, nphi2
 
       real tmem, tsys, tio, ttotal, time0, time, cpu, dummy, second1
       real time1, time2, tmin1, tmin2, dum
@@ -311,7 +309,7 @@ c***  3-D arrays:
 
       integer n, m, nphi
 
-      real xant, btor, awallz, awright, rhoplasm,
+      real xant, btor, awallz, rhoplasm,
      .    reomg1, reomg2, reomg3,
      .    phimax,
      .    rhonorm, xiota0, rholim, psi1,
@@ -755,16 +753,12 @@ c     .        form='formatted')
       xlnlam = 20.0
       xmu0 = 1.26e-06
       clight = 1.0 / sqrt(eps0 * xmu0)
-      xmax = rwright - rwleft
-      awright = rwright - rt
-      ymax = 2.0 * awally
 
       theta_antr = theta_ant / 180. * pi
 
 
 
-      signb = b0 / abs(b0)
-c     signb = 1.0
+
 
 
 
@@ -774,7 +768,7 @@ c     signb = 1.0
       vthi10 = sqrt(2.0 * t0i / xmi1)
       v0i = vthi10
       rhoi10 = vthi10 / omgci10
-      rhoi1overl = rhoi10 / xmax
+c      rhoi1overl = rhoi10 / xmax
 
 
       xkphi0 = nphiant / rt
@@ -787,10 +781,10 @@ c     signb = 1.0
 
 
       xkthrho = 0.2
-      omgestar = xkthrho * vsound / ymax
+c      omgestar = xkthrho * vsound / ymax
       xkthdx = 1.0
-      domgk = omgestar
-      shearedge = domgk / xkthdx
+c      domgk = omgestar
+c      shearedge = domgk / xkthdx
 
 
 
@@ -816,7 +810,6 @@ c     signb = 1.0
          write (6, *)	         
          write (6, *) "xkperp_cutoff = ", xkperp_cutoff 	
          write (6, *) "damping       = ", damping
-	 write (6, *) "upshift = ", upshift  
 
 	 write (6, *)
          write (6, *) "nnodex  = ", nnodex
@@ -840,7 +833,6 @@ c     signb = 1.0
          write (15, *)	         
          write (15, *) "xkperp_cutoff = ", xkperp_cutoff 	
          write (15, *) "damping       = ", damping
-	 write (15, *) "upshift = ", upshift  
 
 	 write (15, *)
          write (15, *) "nnodex  = ", nnodex
@@ -948,32 +940,71 @@ c         write(15, 7017)rhoi10
          write(15, *) "psilim = ", psilim
       end if
 
+      t1 = second1(dummy)
+
 *     ------------------------------------
 *     Stellarator flux surfaces from VMEC
 *     ------------------------------------
       if (igeom .eq. 5) then
-         open(unit=40,file='transform.out',status='old',
-     .      form='formatted')
+         call vmec_setup(myid, nproc, iwout, wout,
+     .       nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
+     .       capr, y, phi, rwleft, rwright, ytop, ybottom, rt, b0,
+     .       bxn, byn, bzn, bmod, psi, rho, thetap, nfp)
 
-         read(40, 309) nnodex, nnodey, nnodephi
-         read(40, 310) rt, b0
-         read(40, 310) (((bxn(i,j,k), i = 1, nnodex), j = 1, nnodey),
-     .                    k = 1, nnodephi)
-         read(40, 310) (((byn(i,j,k), i = 1, nnodex), j = 1, nnodey),
-     .                    k = 1, nnodephi)
-         read(40, 310) (((bzn(i,j,k), i = 1, nnodex), j = 1, nnodey),
-     .                    k = 1, nnodephi)
-         read(40, 310) (((bmod(i,j,k), i = 1, nnodex), j = 1, nnodey),
-     .                    k = 1, nnodephi)
-         read(40, 310) (((psi(i,j,k), i = 1, nnodex), j = 1, nnodey),
-     .                    k = 1, nnodephi)
-         read(40, 310) (((rho(i,j,k), i = 1, nnodex), j = 1, nnodey),
-     .                    k = 1, nnodephi)
-         read(40, 310) (((thetap(i,j,k), i = 1, nnodex), j = 1, nnodey),
-     .                    k = 1, nnodephi)
-         read(40, 309) nfp
+!         open(unit=40,file='transform.out',status='old',
+!     .      form='formatted')
 
-         close(40)
+!         read(40, 309) nnodex, nnodey, nnodephi
+!         read(40, 310) rt, b0
+!         read(40, 310) (((bxn(i,j,k), i = 1, nnodex), j = 1, nnodey),
+!     .                    k = 1, nnodephi)
+!         read(40, 310) (((byn(i,j,k), i = 1, nnodex), j = 1, nnodey),
+!     .                    k = 1, nnodephi)
+!         read(40, 310) (((bzn(i,j,k), i = 1, nnodex), j = 1, nnodey),
+!     .                    k = 1, nnodephi)
+!         read(40, 310) (((bmod(i,j,k), i = 1, nnodex), j = 1, nnodey),
+!     .                    k = 1, nnodephi)
+!         read(40, 310) (((psi(i,j,k), i = 1, nnodex), j = 1, nnodey),
+!     .                    k = 1, nnodephi)
+!         read(40, 310) (((rho(i,j,k), i = 1, nnodex), j = 1, nnodey),
+!     .                    k = 1, nnodephi)
+!         read(40, 310) (((thetap(i,j,k), i = 1, nnodex), j = 1, nnodey),
+!     .                    k = 1, nnodephi)
+!         read(40, 309) nfp
+
+!         close(40)
+
+         if (wout_bscale .lt. 0.0) then
+            do k = 1, nnodephi
+               do i = 1, nnodex
+                  do j = 1, nnodey
+                     bxn(i, j, k) = -bxn(i, j, k)
+                     byn(i, j, k) = -byn(i, j, k)
+                     bzn(i, j, k) = -bzn(i, j, k)
+                  enddo
+               enddo
+            enddo
+         endif
+         if (abs(wout_bscale) .ne. 1.0) then
+            do k = 1, nnodephi
+               do i = 1, nnodex
+                  do j = 1, nnodey
+                     bmod(i, j, k) = bmod(i, j, k) * abs(wout_bscale)
+                  enddo
+               enddo
+            enddo
+
+            b0 = b0 * wout_bscale
+         endif
+
+         xkphi0 = nphiant / rt
+         xnphi0 = xkphi0 / xk0
+         vphase = omgrf / xkphi0
+
+         wphase = 0.0
+         if(vthe .ne. 0.0)wphase = vphase / vthe
+
+         rnz = xkphi0 / xk0
 
          if(myid .eq. 0)then
             write(6, 1812)rt
@@ -985,19 +1016,13 @@ c         write(15, 7017)rhoi10
 
       end if
 
-!efd    ----------------------------
-!efd    reset nnodex,nnodey,nnodephi
-!efd    ----------------------------
-        nnodex = nmodesx
-        nnodey = nmodesy
-        nnodephi = nmodesphi
-
-
-
-
-      xwleft = rwleft - rt
-      xwright = rwright - rt
-
+      time = second1(dummy) - t1
+      tmin = time / 60.
+      if(myid .eq. 0)then
+         write(6, 386)tmin
+         write(15, 386) tmin
+      end if
+  386 format('time to call vmec_setup = ',f9.3, 4h min)
 
 *     --------------------------------
 *     Distribution function
@@ -1051,6 +1076,13 @@ c         write(15, 7017)rhoi10
 
       if(myid .eq. 0)write(53, 309) nnodex, nnodey, nnodephi
 
+      signb = b0 / abs(b0)
+
+      xwleft = rwleft - rt
+      xwright = rwright - rt
+      xmax = rwright - rwleft
+      ymax = ytop - ybottom
+
 *     ---------------------------------------
 *     Define x mesh: x(i), xprime(i), capr(i)
 *     ---------------------------------------
@@ -1084,14 +1116,14 @@ c--   y(j) : -ymax / 2.0   to   ymax / 2.0
       do j = 1, nnodey
          yprime(j) = (j-1) * dy  + dy / 2.0
 c--      Note: the code gives slightly smoother results with dy/2.0 added
-         y(j) = yprime(j) - awally
+         y(j) = yprime(j) + ybottom
          if(myid .eq. 0)write(53, 1312)j, y(j)
       end do
 
       dyc = ymax / nnodecy
       do j = 1, nnodecy
          yprimec(j) = (j-1) * dyc + dyc / 2.0
-         ycourse(j) = yprimec(j) - awally
+         ycourse(j) = yprimec(j) + ybottom
 c         write(6, 1312)j, caprc(j)
       end do
 
@@ -1169,8 +1201,6 @@ c         write(6, 1312)n, rhon(n)
 
       xant = rant - rt
       iant=int((rant - rwleft) / dx) + 1
-      jant2 = int((awally + yant) / dy ) + 1
-      jant1 = int((awally - yant) / dy ) + 1
 
 c--note curden is in Amps per meter of toroidal length (2.*pi*rt).
       xjantx = curdnx / dx
@@ -2145,8 +2175,6 @@ c         if(nphi .eq. 0)xkzsav(nphi) = 1.0e-04
             end do
          end do
       end do
-
-
 
 
 c     -------------------------------------

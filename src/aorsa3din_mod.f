@@ -5,6 +5,11 @@
 !     --------------------------------------------------------
 !     Declarations and defaults for aorsa3d.in input variables
 !     --------------------------------------------------------
+      integer :: iwout = 0                ! if (iwout .eq. 0) NetCDF
+                                          ! if (iwout .eq. 1) ascii
+      character*128 :: wout = ' '         ! wout file name
+      real :: wout_bscale = 1.0           ! scale wout B by bscale
+
       integer :: ndiste = 0               !-----ndist:  if (ndist .eq. 0) Maxwellian is used in sigmad_stix
                                           !-----        if (ndist .eq. 1) non-Maxwellian is used in sigmad_stix
       integer :: ndisti1 = 0
@@ -84,9 +89,10 @@ c-----      if(iez.eq.1) Ez is set to zero
       real :: q0 = 1.0                    !-----value of inverse rotational transform on axis
       real :: rt = 2.1                    !-----major radius of torus
       real :: ekappa = 1.5                !-----elongation
-      real :: rwleft = .70                !-----major radius of the left conducting wall
-      real :: rwright = 2.5               !-----major radius of the right conducting wall
-      real :: awally = 7.0000E-01         !-----vertical location of the conducting wall
+      real :: rwleft  = 0.0               !-----major radius of the left conducting wall
+      real :: rwright = 0.0               !-----major radius of the right conducting wall
+      real :: ytop    = 0.0               !-----location of the upper conducting wall
+      real :: ybottom = 0.0               !-----location of the lower conducting wall
       real :: ymax = 0.0                  !-----radius in vertical (y) direction- in default it is set to awallx
       real :: aplasm = 7.0000E-01         !-----location of the plasma-scrape-off interface
       real :: alim = 100.0                !-----location of turning point in step function density function
@@ -250,7 +256,7 @@ c-----    For black background set ibackground = 1 (box is red)
      .    iroot, iequat, igeom, epszet, phistart,
      .    iqx, izfunc, iez, nprow, npcol,
      .    amu1, amu2, z1, z2, eta,
-     .    b0, rt, awally, xnurf, aplasm, xnlim, signbz,
+     .    b0, rt, xnurf, aplasm, xnlim, signbz,
      .    xn0, flat, b1rat, b2rat, curdnx, curdny, curdnz,
      .    nstep, nabs, xnuabs, xbnch, xleft, xright,
      .    isigma, itemp, telim, tilim,
@@ -261,11 +267,12 @@ c-----    For black background set ibackground = 1 (box is red)
      .    rzoom1, rzoom2, ibackground, iabsorb, q0, prfin,
      .    nzfun, alim, grad, qavg0, nnodecx, nnodecy, nnodecphi, ymax,
      .    alphan, alphate, alphati, betan, betate, betati,
-     .    ekappa, rwleft, rwright,
+     .    ekappa, rwleft, rwright, ytop, ybottom,
      .    nphiant, iexpnd, icurve, xnuomg, psilim, psiant, psiplasm,
      .    nstrap, iflag_gammab, theta_ant, strap_width, strap_separ,
      .    phase_diff, amplt, damping, xkperp_cutoff, iprofile,
      .    nuper, nupar, nkperp, nzeta_wdot, i_write, n_bin, nboundary,
-     .    ndiste, ndisti1, ndisti2, ndisti3, ftrap
+     .    ndiste, ndisti1, ndisti2, ndisti3, ftrap,
+     .    iwout, wout, wout_bscale
 
       end module aorsa3din_mod

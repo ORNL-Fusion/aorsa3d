@@ -25,6 +25,7 @@ OBJFILES = \
  $(OBJECT_DIR)/aorsa3din_mod.o \
  $(OBJECT_DIR)/swim_global_data_mod.o \
  $(OBJECT_DIR)/profile_mod.o \
+ $(OBJECT_DIR)/vmec_setup.o \
  $(OBJECT_DIR)/qlsum.o \
  $(OBJECT_DIR)/ql_myra.o \
  $(OBJECT_DIR)/aorsa3dMain.o \
@@ -85,6 +86,10 @@ $(OBJECT_DIR)/swim_global_data_mod.o:  $(SOURCE_DIR)/swim_global_data_mod.f $(IN
 $(OBJECT_DIR)/profile_mod.o:    $(SOURCE_DIR)/profile_mod.f $(INCFILES)
 	                        $(COMPILE90) -o $(OBJECT_DIR)/profile_mod.o \
                                 $(SOURCE_DIR)/profile_mod.f
+
+$(OBJECT_DIR)/vmec_setup.o:     $(SOURCE_DIR)/vmec_setup.f $(INCFILES)
+	                        $(COMPILE) -o $(OBJECT_DIR)/vmec_setup.o \
+                                $(SOURCE_DIR)/vmec_setup.f
 
 $(OBJECT_DIR)/aorsa3dMain.o:    $(SOURCE_DIR)/aorsa3dMain.F $(INCFILES)
 	                        $(COMPILE) -o $(OBJECT_DIR)/aorsa3dMain.o \
