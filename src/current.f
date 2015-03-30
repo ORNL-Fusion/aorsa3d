@@ -2,22 +2,20 @@ c
 c***************************************************************************
 c
       subroutine ntilda_(ntilda, nxmx, nymx, nphimx,
-     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, nphidim1, nphidim2,
-     .   xm, q, xn, xkt, lmax,
+     .   xm, q, xn, xkt, omgc, omgp2, lmax,
      .   xkx, xky, xkz, nzfun, ibessel,
-     .   x, y, phi,
      .   exk, eyk, ezk, capr,
-     .   bxn, byn, bzn, bmod, dx, dy, dphi,
+     .   bxn, byn, bzn,
      .   uxx, uxy, uxz,
      .   uyx, uyy, uyz,
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc,
-     .   iflag_gammab)
+     .   xx, yy, zz, isigma, xnuomg, psi, psilim,
+     .   myid, nproc, delta0, gradprlb, bmod,
+     .   zi, eps0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 *-----------------------------------------------------------------------
 *     This subroutine calculates the electron density fluctuations
@@ -27,7 +25,9 @@ c
 
       logical ismine
 
-      integer nproc, myid, ngrid, id, iflag_gammab
+      complex zi
+      real eps0
+      integer nproc, myid, ngrid, id
       real delta0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff
       integer  i, j, k, n, m, nphi, lmax, nzfun, ibessel, irnc, icnc
       integer rsrc, csrc, myrow, mycol, nprow, npcol, lrindx, lcindx,
@@ -57,8 +57,9 @@ c
      .     uzz(nxmx, nymx, nphimx)
 
 
-      real bmod(nxmx, nymx, nphimx), signb, dum
-      real xm, omgc, omgp2, eps0, xnuomg
+      real bmod(nxmx, nymx, nphimx)
+      real xm, omgc(nxmx, nymx, nphimx), omgp2(nxmx, nymx, nphimx),
+     .     xnuomg
       real capr(nxmx), dx, dy, q, xme, dphi
 
 
@@ -72,8 +73,7 @@ c
       real xkx(nkdim1 : nkdim2),
      .     xky(mkdim1 : mkdim2),
      .     xkz(nphidim1 : nphidim2)
-      real xn(nxmx, nymx, nphimx), xkt(nxmx, nymx, nphimx),
-     .     x(nxmx), y(nymx), phi(nphimx)
+      real xn(nxmx, nymx, nphimx), xkt(nxmx, nymx, nphimx)
 
 
       real bxn(nxmx, nymx, nphimx),
@@ -82,11 +82,6 @@ c
 
       real gradprlb(nxmx, nymx, nphimx)
       real psi(nxmx, nymx, nphimx), psilim
-
-      data eps0, xme / 8.85e-12, 9.11e-31 /
-
-c      eps0 = 8.85e-12
-c      zi = cmplx(0.0, 1.0)
 
       ntilda(:,:,:) = 0.0
 
@@ -105,12 +100,6 @@ c      zi = cmplx(0.0, 1.0)
                id = mod(ngrid, nproc)
                if(id .eq. myid)then
 
-                  omgc  = q * bmod(i, j, k) / xm * signb
-                  omgp2 = xn(i,j,k) * q**2  / (eps0 * xm)
-
-
-                  ntilda(i,j,k) = 0.0
-
                   if(psi(i,j,k) .le. psilim)then
 
 
@@ -123,14 +112,13 @@ c      zi = cmplx(0.0, 1.0)
      .                        delta_x, delta_y, delta_z,
      .                        bmod(i,j,k), gradprlb(i,j,k),
      .                        xm, q, xn(i,j,k), xnuomg,
-     .                        xkt(i,j,k), omgc, omgp2,
+     .                        xkt(i,j,k), omgc(i,j,k), omgp2(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkx(n), xky(m), xkz(nphi), capr(i),
      .                        bxn(i,j,k), byn(i,j,k), bzn(i,j,k),
      .                        uxx(i,j,k), uxy(i,j,k), uxz(i,j,k),
      .                        uyx(i,j,k), uyy(i,j,k), uyz(i,j,k),
-     .                        uzx(i,j,k), uzy(i,j,k), uzz(i,j,k),
-     .                        iflag_gammab)
+     .                        uzx(i,j,k), uzy(i,j,k), uzz(i,j,k))
                               cexpkxkykz = xx(n,i) * yy(m,j) *zz(nphi,k)
 
                               ntilda(i,j,k) = ntilda(i,j,k) +
@@ -161,23 +149,20 @@ c***************************************************************************
 c
 
       subroutine current_elect(xjpx, xjpy, xjpz, nxmx, nymx, nphimx,
-     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, nphidim1, nphidim2,
-     .   xm, q, xn, xkt, lmax,
+     .   xm, q, xn, xkt, omgc, omgp2, lmax,
      .   xkx, xky, xkz, nzfun, ibessel,
-     .   x, y, phi,
      .   exk, eyk, ezk, capr,
-     .   bxn, byn, bzn, bmod, dx, dy, dphi,
+     .   bxn, byn, bzn,
      .   uxx, uxy, uxz,
      .   uyx, uyy, uyz,
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc,
-     .   iflag_gammab, delta0, xk0,
-     .   damping, xkx_cutoff, xky_cutoff, xkz_cutoff)
+     .   xx, yy, zz, isigma, xnuomg, psi, psilim,
+     .   myid, nproc, delta0, gradprlb, bmod,
+     .   zi, eps0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 *-----------------------------------------------------------------------
 *     This subroutine calculates the plasma current for a single species
@@ -187,7 +172,9 @@ c
 
       logical ismine
 
-      integer nproc, myid, ngrid, id, iflag_gammab
+      complex zi
+      real eps0
+      integer nproc, myid, ngrid, id
       real delta0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff
       integer  i, j, k, n, m, nphi, lmax, nzfun, ibessel, irnc, icnc
       integer rsrc, csrc, myrow, mycol, nprow, npcol, lrindx, lcindx,
@@ -219,8 +206,9 @@ c
      .     uzz(nxmx, nymx, nphimx)
 
 
-      real bmod(nxmx, nymx, nphimx), signb, dum
-      real xm, omgc, omgp2, eps0, xnuomg
+      real bmod(nxmx, nymx, nphimx)
+      real xm, omgc(nxmx, nymx, nphimx), omgp2(nxmx, nymx, nphimx),
+     .     xnuomg
       real capr(nxmx), dx, dy, q, xme, dphi
 
 
@@ -237,8 +225,7 @@ c
       real xkx(nkdim1 : nkdim2),
      .     xky(mkdim1 : mkdim2),
      .     xkz(nphidim1 : nphidim2)
-      real xn(nxmx, nymx, nphimx), xkt(nxmx, nymx, nphimx),
-     .     x(nxmx), y(nymx), phi(nphimx)
+      real xn(nxmx, nymx, nphimx), xkt(nxmx, nymx, nphimx)
 
 
       real bxn(nxmx, nymx, nphimx),
@@ -247,11 +234,6 @@ c
 
       real gradprlb(nxmx, nymx, nphimx)
       real psi(nxmx, nymx, nphimx), psilim
-
-      data eps0, xme / 8.85e-12, 9.11e-31 /
-
-c      eps0 = 8.85e-12
-c      zi = cmplx(0.0, 1.0)
 
       xjpx(:,:,:) = 0.0
       xjpy(:,:,:) = 0.0
@@ -272,14 +254,6 @@ c      zi = cmplx(0.0, 1.0)
                id = mod(ngrid, nproc)
                if(id .eq. myid)then
 
-                  omgc  = q * bmod(i, j, k) / xm * signb
-                  omgp2 = xn(i,j,k) * q**2  / (eps0 * xm)
-
-
-                  xjpx(i,j,k) = 0.0
-                  xjpy(i,j,k) = 0.0
-                  xjpz(i,j,k) = 0.0
-
                   if(psi(i,j,k) .le. psilim)then
 
 
@@ -292,7 +266,7 @@ c      zi = cmplx(0.0, 1.0)
      .                        call sigmah_stix_elect(i, j, n, m,
      .                        bmod(i,j,k), gradprlb(i,j,k),
      .                        xm, q, xn(i,j,k), xnuomg,
-     .                        xkt(i,j,k), omgc, omgp2,
+     .                        xkt(i,j,k), omgc(i,j,k), omgp2(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkx(n), xky(m), xkz(nphi), capr(i),
      .                        bxn(i,j,k), byn(i,j,k), bzn(i,j,k),
@@ -302,14 +276,14 @@ c      zi = cmplx(0.0, 1.0)
      .                        sigxx, sigxy, sigxz,
      .                        sigyx, sigyy, sigyz,
      .                        sigzx, sigzy, sigzz,
-     .                        iflag_gammab, delta0, xk0, damping,
+     .                        delta0, xk0, damping,
      .                        xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 
                               if (isigma .eq. 0)
      .                        call sigmac_stix(i, j, n, m,
      .                        xm, q, xn(i,j,k), xnuomg,
-     .                        xkt(i,j,k), omgc, omgp2,
+     .                        xkt(i,j,k), omgc(i,j,k), omgp2(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkx(n), xky(m), xkz(nphi), capr(i),
      .                        bxn(i,j,k), byn(i,j,k), bzn(i,j,k),
@@ -371,21 +345,20 @@ c***************************************************************************
 c
 
       subroutine current(xjpx, xjpy, xjpz, nxmx, nymx, nphimx,
-     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, nphidim1, nphidim2,
-     .   xm, q, xn, xkt, lmax,
+     .   xm, q, xn, xkt, omgc, omgp2, lmax,
      .   xkx, xky, xkz, nzfun, ibessel,
-     .   x, y, phi,
      .   exk, eyk, ezk, capr,
-     .   bxn, byn, bzn, bmod, dx, dy, dphi,
+     .   bxn, byn, bzn,
      .   uxx, uxy, uxz,
      .   uyx, uyy, uyz,
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc, iflag_gammab, delta0, xk0)
+     .   xx, yy, zz, isigma, xnuomg, psi, psilim,
+     .   myid, nproc, delta0, gradprlb, bmod,
+     .   zi, eps0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 *-----------------------------------------------------------------------
 *     This subroutine calculates the plasma current for a single species
@@ -395,8 +368,10 @@ c
 
       logical ismine
 
-      integer nproc, myid, ngrid, id, iflag_gammab
-      real delta0, xk0
+      complex zi
+      real eps0
+      integer nproc, myid, ngrid, id
+      real delta0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff
       integer  i, j, k, n, m, nphi, lmax, nzfun, ibessel, irnc, icnc
       integer rsrc, csrc, myrow, mycol, nprow, npcol, lrindx, lcindx,
      .   icontxt
@@ -427,8 +402,9 @@ c
      .     uzz(nxmx, nymx, nphimx)
 
 
-      real bmod(nxmx, nymx, nphimx), signb, dum
-      real xm, omgc, omgp2, eps0, xnuomg
+      real bmod(nxmx, nymx, nphimx)
+      real xm, omgc(nxmx, nymx, nphimx), omgp2(nxmx, nymx, nphimx),
+     .     xnuomg
       real capr(nxmx), dx, dy, q, xme, dphi
 
 
@@ -445,8 +421,7 @@ c
       real xkx(nkdim1 : nkdim2),
      .     xky(mkdim1 : mkdim2),
      .     xkz(nphidim1 : nphidim2)
-      real xn(nxmx, nymx, nphimx), xkt(nxmx, nymx, nphimx),
-     .     x(nxmx), y(nymx), phi(nphimx)
+      real xn(nxmx, nymx, nphimx), xkt(nxmx, nymx, nphimx)
 
 
       real bxn(nxmx, nymx, nphimx),
@@ -455,11 +430,6 @@ c
 
       real gradprlb(nxmx, nymx, nphimx)
       real psi(nxmx, nymx, nphimx), psilim
-
-      data eps0, xme / 8.85e-12, 9.11e-31 /
-
-c      eps0 = 8.85e-12
-c      zi = cmplx(0.0, 1.0)
 
       xjpx(:,:,:) = 0.0
       xjpy(:,:,:) = 0.0
@@ -480,14 +450,6 @@ c      zi = cmplx(0.0, 1.0)
                id = mod(ngrid, nproc)
                if(id .eq. myid)then
 
-                  omgc  = q * bmod(i, j, k) / xm * signb
-                  omgp2 = xn(i,j,k) * q**2  / (eps0 * xm)
-
-
-                  xjpx(i,j,k) = 0.0
-                  xjpy(i,j,k) = 0.0
-                  xjpz(i,j,k) = 0.0
-
                   if(psi(i,j,k) .le. psilim)then
 
 
@@ -500,7 +462,7 @@ c      zi = cmplx(0.0, 1.0)
      .                        call sigmah_stix(i, j, n, m,
      .                        bmod(i,j,k), gradprlb(i,j,k),
      .                        xm, q, xn(i,j,k), xnuomg,
-     .                        xkt(i,j,k), omgc, omgp2,
+     .                        xkt(i,j,k), omgc(i,j,k), omgp2(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkx(n), xky(m), xkz(nphi), capr(i),
      .                        bxn(i,j,k), byn(i,j,k), bzn(i,j,k),
@@ -510,13 +472,13 @@ c      zi = cmplx(0.0, 1.0)
      .                        sigxx, sigxy, sigxz,
      .                        sigyx, sigyy, sigyz,
      .                        sigzx, sigzy, sigzz,
-     .                        iflag_gammab, delta0, xk0)
+     .                        delta0, xk0)
 
 
                               if (isigma .eq. 0)
      .                        call sigmac_stix(i, j, n, m,
      .                        xm, q, xn(i,j,k), xnuomg,
-     .                        xkt(i,j,k), omgc, omgp2,
+     .                        xkt(i,j,k), omgc(i,j,k), omgp2(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkx(n), xky(m), xkz(nphi), capr(i),
      .                        bxn(i,j,k), byn(i,j,k), bzn(i,j,k),

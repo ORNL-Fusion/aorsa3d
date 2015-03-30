@@ -129,7 +129,7 @@
     real, parameter:: EOVERAMU=9.64853e7
     real, parameter:: EOVERMH = 9.58084e+07
     
-    real, parameter:: MPC2 = 938271998.38
+    real, parameter:: MPC2 = 9.3807572e8!938271998.38
     real, parameter:: C = 2.99792458e8
     real, parameter:: PI = 3.141592653597932384
     real :: cosbeta_n_m, sinbeta_n_m
@@ -233,11 +233,9 @@
        do n = nkx1, nkx2
           do m = nky1, nky2
              xkphi = xkzsav(nphi) / capr
-             if(xkphi .eq. 0.0)xkphi = 1.0e-05
              xkrhon = uxx * xkxsav(n) + uxy * xkysav(m) + uxz * xkphi
              xketan = uyx * xkxsav(n) + uyy * xkysav(m) + uyz * xkphi
              xkprln   = uzx * xkxsav(n) + uzy * xkysav(m) + uzz * xkphi
-	     xkperpn = sqrt(xkrhon**2 + xketan**2)
 	     
             ! ------------------------------------
             ! Optional: leave out upshift in xkprl
@@ -338,12 +336,12 @@
        do n = nkx1, nkx2
           do m = nky1, nky2
              xkphi = xkzsav(nphi) / capr
-             if(xkphi .eq. 0.0)xkphi = 1.0e-05
              xkrhon = uxx * xkxsav(n) + uxy * xkysav(m) + uxz * xkphi
              xketan = uyx * xkxsav(n) + uyy * xkysav(m) + uyz * xkphi
              xkprln   = uzx * xkxsav(n) + uzy * xkysav(m) + uzz * xkphi
 
-             xkperpn = sqrt(xkrhon**2 + xketan**2) + 1.0e-08
+             xkperpn = sqrt(xkrhon**2 + xketan**2)
+             if(xkperpn .eq. 0.0)xkperpn = 1.0e-08
 	
              zeta0 = xkperpn * uperpk * c * sqmut0i * wci
 	  
@@ -388,11 +386,9 @@
        do n = nkx1, nkx2
           do m = nky1, nky2
              xkphi = xkzsav(nphi) / capr
-             if(xkphi .eq. 0.0)xkphi = 1.0e-05
              xkrhon = uxx * xkxsav(n) + uxy * xkysav(m) + uxz * xkphi
              xketan = uyx * xkxsav(n) + uyy * xkysav(m) + uyz * xkphi
              xkprln   = uzx * xkxsav(n) + uzy * xkysav(m) + uzz * xkphi
-	     xkperpn = sqrt(xkrhon**2 + xketan**2)
 	     
 	    ! ------------------------------------
             ! Optional: leave out upshift in xkprl
@@ -459,7 +455,8 @@
 	
              NPARA_sav(n, m, nphi) = xkprln * C * WI
 
-             xkperpn = sqrt(xkrhon**2 + xketan**2) + 1.0e-08
+             xkperpn = sqrt(xkrhon**2 + xketan**2)
+             if(xkperpn .eq. 0.0)xkperpn = 1.0e-08
              xkperpni = 1.0 / xkperpn
 	
              cosbeta_n_m = xkrhon * xkperpni
@@ -639,9 +636,12 @@
           i = int((UPAR0 - UPAR(1)) * dui) + 1
 	  i_uprl = i
           p = (UPAR0 - UPAR(i)) * dui
-		
-	  dfduper0 = dfduper(k_uper, NUPAR)
-          if (i .ne. NUPAR) then
+
+          if (i .lt. 1) then
+             dfduper0 = dfduper(k_uper, 1)
+          else if (i .gt. NUPAR) then
+             dfduper0 = dfduper(k_uper, NUPAR)
+          else
              dfduper0 = dfduper(k_uper, i) + (dfduper(k_uper, i+1) - dfduper(k_uper, i)) * p
           end if
 		
@@ -996,11 +996,9 @@
        do n = nkx1, nkx2
           do m = nky1, nky2
              xkphi = xkzsav(nphi) / capr
-             if(xkphi .eq. 0.0)xkphi = 1.0e-05
              xkrhon = uxx * xkxsav(n) + uxy * xkysav(m) + uxz * xkphi
              xketan = uyx * xkxsav(n) + uyy * xkysav(m) + uyz * xkphi
              xkprln   = uzx * xkxsav(n) + uzy * xkysav(m) + uzz * xkphi
-	     xkperpn = sqrt(xkrhon**2 + xketan**2)
 	     
             ! ------------------------------------
             ! Optional: leave out upshift in xkprl
@@ -1100,12 +1098,12 @@
        do n = nkx1, nkx2
           do m = nky1, nky2
              xkphi = xkzsav(nphi) / capr
-             if(xkphi .eq. 0.0)xkphi = 1.0e-05
              xkrhon = uxx * xkxsav(n) + uxy * xkysav(m) + uxz * xkphi
              xketan = uyx * xkxsav(n) + uyy * xkysav(m) + uyz * xkphi
              xkprln   = uzx * xkxsav(n) + uzy * xkysav(m) + uzz * xkphi
 
-             xkperpn = sqrt(xkrhon**2 + xketan**2) + 1.0e-08
+             xkperpn = sqrt(xkrhon**2 + xketan**2)
+             if(xkperpn .eq. 0.0)xkperpn = 1.0e-08
 	
              zeta0 = xkperpn * uperpk * c * sqmut0i * wci
 	  
@@ -1150,11 +1148,9 @@
        do n = nkx1, nkx2
           do m = nky1, nky2
              xkphi = xkzsav(nphi) / capr
-             if(xkphi .eq. 0.0)xkphi = 1.0e-05
              xkrhon = uxx * xkxsav(n) + uxy * xkysav(m) + uxz * xkphi
              xketan = uyx * xkxsav(n) + uyy * xkysav(m) + uyz * xkphi
              xkprln   = uzx * xkxsav(n) + uzy * xkysav(m) + uzz * xkphi
-	     xkperpn = sqrt(xkrhon**2 + xketan**2)
 	     
 	    ! ------------------------------------
             ! Optional: leave out upshift in xkprl
@@ -1221,7 +1217,8 @@
 	
              NPARA_sav(n, m, nphi) = xkprln * C * WI
 
-             xkperpn = sqrt(xkrhon**2 + xketan**2) + 1.0e-08
+             xkperpn = sqrt(xkrhon**2 + xketan**2)
+             if(xkperpn .eq. 0.0)xkperpn = 1.0e-08
              xkperpni = 1.0 / xkperpn
 	
              cosbeta_n_m = xkrhon * xkperpni

@@ -135,7 +135,16 @@ c***  3-D arrays:
      .     xnea(nxmx, nymx, nphimx),
      .     xn1a(nxmx, nymx, nphimx),
      .     xn2a(nxmx, nymx, nphimx),
-     .     xn3a(nxmx, nymx, nphimx)
+     .     xn3a(nxmx, nymx, nphimx),
+     .     omgce(nxmx, nymx, nphimx),
+     .     omgci1(nxmx, nymx, nphimx),
+     .     omgci2(nxmx, nymx, nphimx),
+     .     omgci3(nxmx, nymx, nphimx),
+     .     omgpe2(nxmx, nymx, nphimx),
+     .     omgp12(nxmx, nymx, nphimx),
+     .     omgp22(nxmx, nymx, nphimx),
+     .     omgp32(nxmx, nymx, nphimx)
+
 
       complex xjpxe(nxmx, nymx, nphimx),
      .        xjpye(nxmx, nymx, nphimx),
@@ -353,8 +362,6 @@ c***  3-D arrays:
      .     bx, by, bz,
      .     btau(nxmx, nymx), bzeta(nxmx, nymx),
      .     dxdth(nxmx, nymx), xntau(nxmx, nymx),
-     .     omgce,  omgci1, omgci2, omgci3,
-     .     omgpe2, omgp12, omgp22, omgp32,
      .     xiota(nxmx, nymx), qsafety(nxmx, nymx)
 
       real bphi, bth, br
@@ -491,7 +498,7 @@ c***  3-D arrays:
 
 
       integer icnc
-      logical ismine, ismine1, ismine2, ismine3
+      logical ismine
 
       integer numroc
       external numroc
@@ -670,7 +677,7 @@ c     &            nprow,npcol,nproc
       if (myid.eq.0) then
          open(unit=38,file='out38',status='unknown',form='formatted')
          open(unit=28,file='out28',status='unknown',form='formatted')
-c         open(unit=29,file='out29',status='unknown',form='formatted')
+         open(unit=29,file='out29',status='unknown',form='formatted')
 c         open(unit=30,file='out30',status='unknown',form='formatted')
 
          open(unit=69,file='movie_wdot',status='unknown',
@@ -992,7 +999,7 @@ c         write(15, 7017)rhoi10
                enddo
             enddo
 
-            b0 = b0 * wout_bscale
+            b0 = b0 * abs(wout_bscale)
          endif
 
          xkphi0 = nphiant / rt
@@ -1073,8 +1080,6 @@ c         write(15, 7017)rhoi10
 
 
       if(myid .eq. 0)write(53, 309) nnodex, nnodey, nnodephi
-
-      signb = b0 / abs(b0)
 
       xwleft = rwleft - rt
       xwright = rwright - rt
@@ -1791,6 +1796,25 @@ c        allocate( mask2(1:nnodex,1:nnodey,1:nnodephi) )
      .   fvol, vol)
 
 
+      do k = 1, nnodephi
+         do i = 1, nnodex
+            do j = 1, nnodey
+               signb = b0 / abs(b0)
+
+               omgce(i, j, k)  = qe  * bmod(i, j, k) / xme  * signb
+               omgci1(i, j, k) = qi1 * bmod(i, j, k) / xmi1 * signb
+               omgci2(i, j, k) = qi2 * bmod(i, j, k) / xmi2 * signb
+               omgci3(i, j, k) = qi3 * bmod(i, j, k) / xmi3 * signb
+
+               omgpe2(i, j, k) = xnea(i ,j, k) * qe**2  / (eps0 * xme)
+               omgp12(i, j, k) = xn1a(i, j, k) * qi1**2 / (eps0 * xmi1)
+               omgp22(i, j, k) = xn2a(i, j, k) * qi2**2 / (eps0 * xmi2)
+               omgp32(i, j, k) = xn3a(i, j, k) * qi3**2 / (eps0 * xmi3)
+            end do
+         end do
+      end do
+
+
       if(myid .eq. 0)then
 
          write(15, 920)
@@ -1838,25 +1862,14 @@ c               write(6, 1312)iant, xjymax
       do i = 1, nnodex
          do j = 1, nnodey
 
-            omgce  = qe  * bmod(i, j, k) / xme * signb
-            omgci1 = qi1 * bmod(i, j, k) / xmi1 * signb
-            omgci2 = qi2 * bmod(i, j, k) / xmi2 * signb
-            omgci3 = qi3 * bmod(i, j, k) / xmi3 * signb
+            reomg1 = omgrf / omgci1(i,j,k)
+            reomg2 = omgrf / omgci2(i,j,k)
+            reomg3 = omgrf / omgci3(i,j,k)
 
-            omgpe2 = xnea(i, j, k) * qe**2  / (eps0 * xme)
-            omgp12 = xn1a(i, j, k) * qi1**2 / (eps0 * xmi1)
-            omgp22 = xn2a(i, j, k) * qi2**2 / (eps0 * xmi2)
-            omgp32 = xn3a(i, j, k) * qi3**2 / (eps0 * xmi3)
-
-
-            reomg1 = omgrf / omgci1
-            reomg2 = omgrf / omgci2
-            reomg3 = omgrf / omgci3
-
-            scold = 1.0 - omgpe2 / (omgrf**2 - omgce**2)
-     .                  - omgp12 / (omgrf**2 - omgci1**2)
-     .                  - omgp22 / (omgrf**2 - omgci2**2)
-     .                  - omgp32 / (omgrf**2 - omgci3**2)
+            scold = 1.0 - omgpe2(i,j,k) / (omgrf**2 - omgce(i,j,k)**2)
+     .                  - omgp12(i,j,k) / (omgrf**2 - omgci1(i,j,k)**2)
+     .                  - omgp22(i,j,k) / (omgrf**2 - omgci2(i,j,k)**2)
+     .                  - omgp32(i,j,k) / (omgrf**2 - omgci3(i,j,k)**2)
 
             acold(i,j) = xnphi0**2 - scold
 
@@ -1889,24 +1902,14 @@ c               write(6, 1312)iant, xjymax
       do i = 1, nnodex
          do j = 1, nnodey
 
-            omgce  = qe  * bmod(i, j, k) / xme * signb
-            omgci1 = qi1 * bmod(i, j, k) / xmi1 * signb
-            omgci2 = qi2 * bmod(i, j, k) / xmi2 * signb
-            omgci3 = qi3 * bmod(i, j, k) / xmi3 * signb
+            reomg1 = omgrf / omgci1(i,j,k)
+            reomg2 = omgrf / omgci2(i,j,k)
+            reomg3 = omgrf / omgci3(i,j,k)
 
-            omgpe2 = xnea(i, j, k) * qe**2  / (eps0 * xme)
-            omgp12 = xn1a(i, j, k) * qi1**2 / (eps0 * xmi1)
-            omgp22 = xn2a(i, j, k) * qi2**2 / (eps0 * xmi2)
-            omgp32 = xn3a(i, j, k) * qi3**2 / (eps0 * xmi3)
-
-            reomg1 = omgrf / omgci1
-            reomg2 = omgrf / omgci2
-            reomg3 = omgrf / omgci3
-
-            scold = 1.0 - omgpe2 / (omgrf**2 - omgce**2)
-     .                  - omgp12 / (omgrf**2 - omgci1**2)
-     .                  - omgp22 / (omgrf**2 - omgci2**2)
-     .                  - omgp32 / (omgrf**2 - omgci3**2)
+            scold = 1.0 - omgpe2(i,j,k) / (omgrf**2 - omgce(i,j,k)**2)
+     .                  - omgp12(i,j,k) / (omgrf**2 - omgci1(i,j,k)**2)
+     .                  - omgp22(i,j,k) / (omgrf**2 - omgci2(i,j,k)**2)
+     .                  - omgp32(i,j,k) / (omgrf**2 - omgci3(i,j,k)**2)
 
             acold(i,j) = xnphi0**2 - scold
 
@@ -1927,11 +1930,8 @@ c               write(6, 1312)iant, xjymax
          do i = 1, nnodex
             do j = 1, nnodey
 
-               omgci1 = qi1 * bmod(i, j, k) / xmi1
-               omgci2 = qi2 * bmod(i, j, k) / xmi2
-
-               reson1(i,j,k) = omgrf / omgci1
-               reson2(i,j,k) = omgrf / omgci2
+               reson1(i,j,k) = omgrf / omgci1(i,j,k)
+               reson2(i,j,k) = omgrf / omgci2(i,j,k)
 
             end do
          end do
@@ -2643,17 +2643,6 @@ c        enddo
                   icnc1 = icnc
                   rsrc1 = myrow
                   csrc1 = mycol
-                  ismine1 = .true.
-
-                     omgce  = qe  * bmod(i, j, k) / xme * signb
-                     omgci1 = qi1 * bmod(i, j, k) / xmi1 * signb
-                     omgci2 = qi2 * bmod(i, j, k) / xmi2 * signb
-                     omgci3 = qi3 * bmod(i, j, k) / xmi3 * signb
-
-                     omgpe2 = xnea(i, j, k) * qe**2  / (eps0 * xme)
-                     omgp12 = xn1a(i, j, k) * qi1**2 / (eps0 * xmi1)
-                     omgp22 = xn2a(i, j, k) * qi2**2 / (eps0 * xmi2)
-                     omgp32 = xn3a(i, j, k) * qi3**2 / (eps0 * xmi3)
 
 
                      xb = -zi / omgrf / eps0 * xjx(i,j,k)
@@ -2685,7 +2674,7 @@ c        enddo
                            call sigmah_stix_elect(i, j, n, m,
      .                        bmod(i, j, k), gradprlb(i, j, k),
      .                        xme, qe, xnea(i, j, k), xnuomg,
-     .                        xkte(i,j,k), omgce, omgpe2,
+     .                        xkte(i,j,k), omgce(i,j,k), omgpe2(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -2696,14 +2685,14 @@ c        enddo
      .                        sigexx, sigexy, sigexz,
      .                        sigeyx, sigeyy, sigeyz,
      .                        sigezx, sigezy, sigezz,
-     .                        iflag_gammab, delta0, xk0, damping,
+     .                        delta0, xk0, damping,
      .                        xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 
                            call sigmah_stix(i, j, n, m,
      .                        bmod(i, j, k), gradprlb(i, j, k),
      .                        xmi1, qi1, xn1a(i, j, k), xnuomg,
-     .                        xkti(i,j,k), omgci1, omgp12,
+     .                        xkti(i,j,k), omgci1(i,j,k), omgp12(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -2714,14 +2703,14 @@ c        enddo
      .                        sig1xx, sig1xy, sig1xz,
      .                        sig1yx, sig1yy, sig1yz,
      .                        sig1zx, sig1zy, sig1zz,
-     .                        iflag_gammab, delta0, xk0)
+     .                        delta0, xk0)
 
 
                            if(eta2 .ne. 0.0)
      .                        call sigmah_stix(i, j, n, m,
      .                        bmod(i, j, k), gradprlb(i, j, k),
      .                        xmi2, qi2, xn2a(i, j, k), xnuomg,
-     .                        xkti(i,j,k), omgci2, omgp22,
+     .                        xkti(i,j,k), omgci2(i,j,k), omgp22(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -2732,14 +2721,14 @@ c        enddo
      .                        sig2xx, sig2xy, sig2xz,
      .                        sig2yx, sig2yy, sig2yz,
      .                        sig2zx, sig2zy, sig2zz,
-     .                        iflag_gammab, delta0, xk0)
+     .                        delta0, xk0)
 
 
                            if(eta3 .ne. 0.0)
      .                        call sigmah_stix(i, j, n, m,
      .                        bmod(i, j, k), gradprlb(i, j, k),
      .                        xmi3, qi3, xn3a(i, j, k), xnuomg,
-     .                         xkti(i,j,k), omgci3, omgp32,
+     .                         xkti(i,j,k), omgci3(i,j,k), omgp32(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -2750,7 +2739,7 @@ c        enddo
      .                        sig3xx, sig3xy, sig3xz,
      .                        sig3yx, sig3yy, sig3yz,
      .                        sig3zx, sig3zy, sig3zz,
-     .                        iflag_gammab, delta0, xk0)
+     .                        delta0, xk0)
 
                         end if ! (isigma.eq.1)
 
@@ -2759,7 +2748,7 @@ c        enddo
 
                            call sigmac_stix(i, j, n, m,
      .                        xme, qe, xnea(i, j, k), xnuomg,
-     .                        xkte(i,j,k), omgce, omgpe2,
+     .                        xkte(i,j,k), omgce(i,j,k), omgpe2(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -2773,7 +2762,7 @@ c        enddo
 
                            call sigmac_stix(i, j, n, m,
      .                        xmi1, qi1, xn1a(i, j, k), xnuomg,
-     .                        xkti(i,j,k), omgci1, omgp12,
+     .                        xkti(i,j,k), omgci1(i,j,k), omgp12(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -2788,7 +2777,7 @@ c        enddo
                            if(eta2 .ne. 0.0)
      .                        call sigmac_stix(i, j, n, m,
      .                        xmi2, qi2, xn2a(i, j, k), xnuomg,
-     .                        xkti(i,j,k), omgci2, omgp22,
+     .                        xkti(i,j,k), omgci2(i,j,k), omgp22(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -2803,7 +2792,7 @@ c        enddo
                            if(eta3 .ne. 0.0)
      .                        call sigmac_stix(i, j, n, m,
      .                        xmi3, qi3, xn3a(i, j, k), xnuomg,
-     .                        xkti(i,j,k), omgci3, omgp32,
+     .                        xkti(i,j,k), omgci3(i,j,k), omgp32(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -3663,96 +3652,88 @@ c
       t1 = second1(dummy)
      
       call ntilda_(ntilda_e, nxmx, nymx, nphimx,
-     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
-     .   xme, qe, xnea, xkte, lmax,
+     .   xme, qe, xnea, xkte, omgce, omgpe2, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
-     .   xprime, yprime, phiprime,
      .   ealphak, ebetak, ebk, capr,
-     .   bxn, byn, bzn, bmod, dx, dy, dphi,
+     .   bxn, byn, bzn,
      .   uxx, uxy, uxz,
      .   uyx, uyy, uyz,
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc,
-     .   iflag_gammab)
+     .   xx, yy, zz, isigma, xnuomg, psi, psilim,
+     .   myid, nproc, delta0, gradprlb, bmod,
+     .   zi, eps0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
       call current_elect(xjpxe, xjpye, xjpze, nxmx, nymx, nphimx,
-     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
-     .   xme, qe, xnea, xkte, lmax,
+     .   xme, qe, xnea, xkte, omgce, omgpe2, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
-     .   xprime, yprime, phiprime,
      .   ealphak, ebetak, ebk, capr,
-     .   bxn, byn, bzn, bmod, dx, dy, dphi,
+     .   bxn, byn, bzn,
      .   uxx, uxy, uxz,
      .   uyx, uyy, uyz,
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc,
-     .   iflag_gammab, delta0, xk0, damping,
-     .   xkx_cutoff, xky_cutoff, xkz_cutoff)
+     .   xx, yy, zz, isigma, xnuomg, psi, psilim,
+     .   myid, nproc, delta0, gradprlb, bmod,
+     .   zi, eps0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 
       call current(xjpx1, xjpy1, xjpz1, nxmx, nymx, nphimx,
-     .   gradprlb,
      .   nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .   nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
-     .   xmi1, qi1, xn1a, xkti, lmax,
+     .   xmi1, qi1, xn1a, xkti, omgci1, omgp12, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
-     .   xprime, yprime, phiprime,
      .   ealphak, ebetak, ebk, capr,
-     .   bxn, byn, bzn, bmod, dx, dy, dphi,
+     .   bxn, byn, bzn,
      .   uxx, uxy, uxz,
      .   uyx, uyy, uyz,
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-     .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .   myid, nproc, iflag_gammab, delta0, xk0)
+     .   xx, yy, zz, isigma, xnuomg, psi, psilim,
+     .   myid, nproc, delta0, gradprlb, bmod,
+     .   zi, eps0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
       if(eta2 .ne. 0.0)
      .   call current(xjpx2, xjpy2, xjpz2, nxmx, nymx, nphimx,
-     .      gradprlb,
      .      nnodex, nnodey, nnodephi,
      .      nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .      nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
-     .      xmi2, qi2, xn2a, xkti, lmax,
+     .      xmi2, qi2, xn2a, xkti, omgci2, omgp22, lmax,
      .      xkxsav, xkysav, xkzsav, nzfun, ibessel,
-     .      xprime, yprime, phiprime,
      .      ealphak, ebetak, ebk, capr,
-     .      bxn, byn, bzn, bmod, dx, dy, dphi,
+     .      bxn, byn, bzn,
      .      uxx, uxy, uxz,
      .      uyx, uyy, uyz,
      .      uzx, uzy, uzz,
      .      myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-     .      xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .      myid, nproc, iflag_gammab, delta0, xk0)
+     .      xx, yy, zz, isigma, xnuomg, psi, psilim,
+     .      myid, nproc, delta0, gradprlb, bmod,
+     .      zi, eps0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 
       if(eta3 .ne. 0.0)
      .   call current(xjpx3, xjpy3, xjpz3, nxmx, nymx, nphimx,
-     .      gradprlb,
      .      nnodex, nnodey, nnodephi,
      .      nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .      nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
-     .      xmi3, qi3, xn3a, xkti, lmax,
+     .      xmi3, qi3, xn3a, xkti, omgci3, omgp32, lmax,
      .      xkxsav, xkysav, xkzsav, nzfun, ibessel,
-     .      xprime, yprime, phiprime,
      .      ealphak, ebetak, ebk, capr,
-     .      bxn, byn, bzn, bmod, dx, dy, dphi,
+     .      bxn, byn, bzn,
      .      uxx, uxy, uxz,
      .      uyx, uyy, uyz,
      .      uzx, uzy, uzz,
      .      myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
-     .      xx, yy, zz, isigma, xnuomg, signb, psi, psilim,
-     .      myid, nproc, iflag_gammab, delta0, xk0)
+     .      xx, yy, zz, isigma, xnuomg, psi, psilim,
+     .      myid, nproc, delta0, gradprlb, bmod,
+     .      zi, eps0, xk0, damping, xkx_cutoff, xky_cutoff, xkz_cutoff)
 
 
       time = second1(dummy) - t1
@@ -3795,7 +3776,7 @@ c
      .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
-     .   xme, qe, xnea, xkte, lmax,
+     .   xme, qe, xnea, xkte, omgce, omgpe2, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
      .   ealphak, ebetak, ebk, capr,
      .   bxn, byn, bzn,
@@ -3825,7 +3806,7 @@ c
      .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
-     .   xmi1, qi1, xn1a, xkti, lmax,
+     .   xmi1, qi1, xn1a, xkti, omgci1, omgp12, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
      .   ealphak, ebetak, ebk, capr,
      .   bxn, byn, bzn,
@@ -3854,7 +3835,7 @@ c
      .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
-     .   xmi2, qi2, xn2a, xkti, lmax,
+     .   xmi2, qi2, xn2a, xkti, omgci2, omgp22, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
      .   ealphak, ebetak, ebk, capr,
      .   bxn, byn, bzn,
@@ -3884,7 +3865,7 @@ c
      .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
-     .   xmi3, qi3, xn3a, xkti, lmax,
+     .   xmi3, qi3, xn3a, xkti, omgci3, omgp32, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
      .   ealphak, ebetak, ebk, capr,
      .   bxn, byn, bzn,
@@ -4417,13 +4398,14 @@ c         write(30, 310) (((ez(i, j, k), i = 1, nnodex), j = 1, nnodey),
 c     .                                                  k = 1, nnodephi)
 
 
-c         write(29, 309)mcap(imcap)
-c         write(29, 310) (((xjpx2(i, j, k), i = 1, nnodex),j = 1,nnodey),
-c     .                                                  k = 1, nnodephi)
-c         write(29, 310) (((xjpy2(i, j, k), i = 1, nnodex),j = 1,nnodey),
-c     .                                                  k = 1, nnodephi)
-c         write(29, 310) (((xjpz2(i, j, k), i = 1, nnodex),j = 1,nnodey),
-c     .                                                  k = 1, nnodephi)
+         write(29, 309)mcap(imcap)
+         write(29, 310) (((xjpx2(i, j, k), i = 1, nnodex),j = 1,nnodey),
+     .                                                  k = 1, nnodephi)
+         write(29, 310) (((xjpy2(i, j, k), i = 1, nnodex),j = 1,nnodey),
+     .                                                  k = 1, nnodephi)
+         write(29, 310) (((xjpz2(i, j, k), i = 1, nnodex),j = 1,nnodey),
+     .                                                  k = 1, nnodephi)
+         close(29)
 
 
          write(28, 309) mcap(imcap)

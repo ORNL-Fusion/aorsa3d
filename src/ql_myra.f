@@ -13,7 +13,7 @@ c
      .   dx, dy, r0, nxdim, nydim, nphidim, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, nphidim1, nphidim2,
-     .   xm, q, xn, xkt, lmax,
+     .   xm, q, xn, xkt, omgc, omgp2, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
      .   exk, eyk, ezk, capr,
      .   bxn, byn, bzn,
@@ -90,7 +90,8 @@ c
       real x(nxdim), y(nydim), argd, drho!, bratio
 
 
-      real xm, omgc, omgp2,
+      real xm, omgc(nxdim, nydim, nphidim),
+     .     omgp2(nxdim, nydim, nphidim),
      .     psi(nxdim, nydim, nphidim), psilim, alpha
       real capr(nxdim), xnuomg, signb,
      .     delta0, dx, dy, r0
@@ -390,10 +391,7 @@ c      factvol2d = 0.0
             Emax = 0.5 * xm * vc_mks**2
             Enorm = Emax / 1.6e-19
             ASPEC = xm / 1.67e-27
-            omgc  = q * bmod(i, j, k) / xm * signb
-            omgp2 = xn(i,j,k) * q**2  / (eps0 * xm)
-
-            BMAG = omgc * (xm / q)
+            BMAG = omgc(i,j,k) * (xm / q)
 	       
 !	    bratio = bmod_mid(i,j,k) / bmod(i,j,k)
 !	    if (bratio .gt. 1.0) bratio = 1.0
@@ -443,7 +441,7 @@ c      factvol2d = 0.0
      .               nxdim, nydim, nphidim, xkxsav, xkysav, xkzsav,
      .               capr(i), xx, yy, zz, i, j, k,
      .               lmaxdim, ndist, nzeta_wdot,
-     .               gradprlb(i,j,k), bmod(i,j,k), omgc,
+     .               gradprlb(i,j,k), bmod(i,j,k), omgc(i,j,k),
      .               alpha, xm,
      .               upshift, xkx_cutoff, xky_cutoff, xkz_cutoff, rt)
      
@@ -461,7 +459,7 @@ c      factvol2d = 0.0
      .               nxdim, nydim, nphidim, xkxsav, xkysav, xkzsav,
      .               capr(i), xx, yy, zz, i, j, k,
      .               lmaxdim, ndist, nzeta_wdot,
-     .               gradprlb(i,j,k), bmod(i,j,k), omgc,
+     .               gradprlb(i,j,k), bmod(i,j,k), omgc(i,j,k),
      .               alpha, xm,
      .               upshift, xkx_cutoff, xky_cutoff, xkz_cutoff, rt)
 	       	    	            	           	       
@@ -610,16 +608,15 @@ c$$$               end do
               
 	      
      
-            wdot(i,j,k) = - pi / 2.0 * eps0 * omgp2
+            wdot(i,j,k) = - pi / 2.0 * eps0 * omgp2(i,j,k)
      .                                     / omgrf * real(wdoti)
                
-            fx0(i,j,k)  = - pi / 2.0 * eps0 * omgp2
+            fx0(i,j,k)  = - pi / 2.0 * eps0 * omgp2(i,j,k)
      .                      / omgrf * real(fx0i) / (2.0 * omgrf)
-            fy0(i,j,k)  = - pi / 2.0 * eps0 * omgp2
+            fy0(i,j,k)  = - pi / 2.0 * eps0 * omgp2(i,j,k)
      .                       / omgrf * real(fy0i)/ (2.0 * omgrf)
      	            
             xkphi = xkzsav(nphi1) / capr(i)
-            if(xkphi .eq. 0.0)xkphi = 1.0e-05
             fz0(i,j,k)  = xkphi / omgrf * wdot(i,j,k)
 
 	

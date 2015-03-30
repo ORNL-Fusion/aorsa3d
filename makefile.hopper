@@ -34,10 +34,10 @@ OBJFILES = \
  $(OBJECT_DIR)/zfunction.o \
  $(OBJECT_DIR)/ztable.o \
  $(OBJECT_DIR)/current.o \
- $(OBJECT_DIR)/wdot.o \
  $(OBJECT_DIR)/fourier.o \
  $(OBJECT_DIR)/assert.o \
  $(OBJECT_DIR)/setupblacs.o \
+ $(OBJECT_DIR)/bessel.o \
  $(OBJECT_DIR)/check.o
 
 INCFILES = $(SOURCE_DIR)/kron3_mod.f
@@ -122,8 +122,12 @@ $(OBJECT_DIR)/zfunction.o:      $(SOURCE_DIR)/zfunction.f $(INCFILES)
 
 $(OBJECT_DIR)/ztable.o:         $(SOURCE_DIR)/ztable.f $(INCFILES)
 	                        $(COMPILE90) -o $(OBJECT_DIR)/ztable.o \
-                                $(SOURCE_DIR)/ztable.f                                
+                                $(SOURCE_DIR)/ztable.f
                                 
+$(OBJECT_DIR)/bessel.o:         $(SOURCE_DIR)/bessel.f $(INCFILES)
+	                        $(COMPILEg) -o $(OBJECT_DIR)/bessel.o \
+                                $(SOURCE_DIR)/bessel.f
+
 $(OBJECT_DIR)/current.o:        $(SOURCE_DIR)/current.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/current.o \
                                 $(SOURCE_DIR)/current.f
@@ -132,10 +136,6 @@ $(OBJECT_DIR)/ql_myra.o:        $(SOURCE_DIR)/ql_myra.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/ql_myra.o \
                                 $(SOURCE_DIR)/ql_myra.f
                                 
-$(OBJECT_DIR)/wdot.o:           $(SOURCE_DIR)/wdot.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/wdot.o \
-                                $(SOURCE_DIR)/wdot.f                                
-
 $(OBJECT_DIR)/fourier.o:        $(SOURCE_DIR)/fourier.f $(INCFILES)
 	                        $(COMPILEg) -o $(OBJECT_DIR)/fourier.o \
                                 $(SOURCE_DIR)/fourier.f
