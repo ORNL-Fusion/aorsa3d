@@ -47,7 +47,7 @@
 
     real  uxx, uxy, uxz, uyx, uyy, uyz, uzx, uzy, uzz
     real  xkphi, sinth, factc, facte, factf, sinth_inv
-    real  xkxsav(nkdim1 : nkdim2), xkysav(mkdim1 : mkdim2), xkzsav(nphi1 : nphi2)
+    real  xkxsav(nkdim1 : nkdim2), xkysav(mkdim1 : mkdim2), xkzsav(nphidim1 : nphidim2)
     real  xkperpn, xkperpni, xkrhon, xketan, xkprln, beta
     real, intent(IN):: W, ZSPEC, ASPEC, BMAG
     real, intent(IN):: ENORM, UPARMIN, UPARMAX

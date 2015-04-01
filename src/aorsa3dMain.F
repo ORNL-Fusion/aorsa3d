@@ -677,7 +677,7 @@ c     &            nprow,npcol,nproc
       if (myid.eq.0) then
          open(unit=38,file='out38',status='unknown',form='formatted')
          open(unit=28,file='out28',status='unknown',form='formatted')
-         open(unit=29,file='out29',status='unknown',form='formatted')
+c         open(unit=29,file='out29',status='unknown',form='formatted')
 c         open(unit=30,file='out30',status='unknown',form='formatted')
 
          open(unit=69,file='movie_wdot',status='unknown',
@@ -4398,14 +4398,14 @@ c         write(30, 310) (((ez(i, j, k), i = 1, nnodex), j = 1, nnodey),
 c     .                                                  k = 1, nnodephi)
 
 
-         write(29, 309)mcap(imcap)
-         write(29, 310) (((xjpx2(i, j, k), i = 1, nnodex),j = 1,nnodey),
-     .                                                  k = 1, nnodephi)
-         write(29, 310) (((xjpy2(i, j, k), i = 1, nnodex),j = 1,nnodey),
-     .                                                  k = 1, nnodephi)
-         write(29, 310) (((xjpz2(i, j, k), i = 1, nnodex),j = 1,nnodey),
-     .                                                  k = 1, nnodephi)
-         close(29)
+c         write(29, 309)mcap(imcap)
+c         write(29, 310) (((xjpx2(i, j, k), i = 1, nnodex),j = 1,nnodey),
+c     .                                                  k = 1, nnodephi)
+c         write(29, 310) (((xjpy2(i, j, k), i = 1, nnodex),j = 1,nnodey),
+c     .                                                  k = 1, nnodephi)
+c         write(29, 310) (((xjpz2(i, j, k), i = 1, nnodex),j = 1,nnodey),
+c     .                                                  k = 1, nnodephi)
+c         close(29)
 
 
          write(28, 309) mcap(imcap)
