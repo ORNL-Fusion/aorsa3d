@@ -209,13 +209,13 @@ c-----    For black background set ibackground = 1 (box is red)
 
       real :: acoil = 0.46
 
-      integer :: kplot = 1
+      integer :: kplot = 0
       integer :: idiag = 5
       integer :: jdiag = 5
       integer :: kdiag = 5
       integer :: nplot = 1
       integer :: mplot = 1
-      integer :: nphiplot = 4
+      integer :: nphiplot = 1
 
       integer :: iexpnd = 1
 

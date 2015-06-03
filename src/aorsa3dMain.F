@@ -69,11 +69,11 @@
       real :: rho_a(n_psi_dim)
 
 *     ----------------------
-*     80 x 80 x 54 modes max
+*     96 x 96 x 64 modes max
 *     ----------------------
-      parameter (nmodesmax = 80)
-      parameter (mmodesmax = 80)
-      parameter (lmodesmax = 54)
+      parameter (nmodesmax = 96)
+      parameter (mmodesmax = 96)
+      parameter (lmodesmax = 64)
 
 
       parameter (nxmx = nmodesmax)
@@ -617,6 +617,8 @@ c        integer, dimension(:,:,:), allocatable :: mask2
       kdiag = nmodesphi / 2
 
       nbessj = lmax + 2
+
+      if (kplot .eq. 0) kplot = nnodephi / 2 + 1
 
 
 !       --------------------------
