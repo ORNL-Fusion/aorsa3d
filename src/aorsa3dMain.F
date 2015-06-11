@@ -123,153 +123,61 @@
       integer :: i_psi_eq
 
 c***  3-D arrays:
-      complex xjx(nxmx, nymx, nphimx),
-     .        xjy(nxmx, nymx, nphimx),
-     .        xjz(nxmx, nymx, nphimx)
+      complex, dimension(:,:,:), allocatable :: xjx, xjy, xjz
 
-      real psi(nxmx, nymx, nphimx),
-     .     thetap(nxmx, nymx, nphimx),
-     .     rho(nxmx, nymx, nphimx),
-     .     xkte(nxmx, nymx, nphimx),
-     .     xkti(nxmx, nymx, nphimx),
-     .     xnea(nxmx, nymx, nphimx),
-     .     xn1a(nxmx, nymx, nphimx),
-     .     xn2a(nxmx, nymx, nphimx),
-     .     xn3a(nxmx, nymx, nphimx),
-     .     omgce(nxmx, nymx, nphimx),
-     .     omgci1(nxmx, nymx, nphimx),
-     .     omgci2(nxmx, nymx, nphimx),
-     .     omgci3(nxmx, nymx, nphimx),
-     .     omgpe2(nxmx, nymx, nphimx),
-     .     omgp12(nxmx, nymx, nphimx),
-     .     omgp22(nxmx, nymx, nphimx),
-     .     omgp32(nxmx, nymx, nphimx)
+      real, dimension(:,:,:), allocatable :: psi, thetap, rho, xkte,
+     .     xkti, xnea, xn1a, xn2a, xn3a, omgce, omgci1, omgci2, omgci3,
+     .     omgpe2, omgp12, omgp22, omgp32
 
+      complex, dimension(:,:,:), allocatable :: xjpxe, xjpye, xjpze,
+     .     xjpx1, xjpy1, xjpz1, xjpx2, xjpy2, xjpz2,
+     .     xjpx3, xjpy3, xjpz3, xjpx, xjpy, xjpz
 
-      complex xjpxe(nxmx, nymx, nphimx),
-     .        xjpye(nxmx, nymx, nphimx),
-     .        xjpze(nxmx, nymx, nphimx)
-      complex xjpx1(nxmx, nymx, nphimx),
-     .        xjpy1(nxmx, nymx, nphimx),
-     .        xjpz1(nxmx, nymx, nphimx)
-      complex xjpx2(nxmx, nymx, nphimx),
-     .        xjpy2(nxmx, nymx, nphimx),
-     .        xjpz2(nxmx, nymx, nphimx)
-      complex xjpx3(nxmx, nymx, nphimx),
-     .        xjpy3(nxmx, nymx, nphimx),
-     .        xjpz3(nxmx, nymx, nphimx)
-      complex xjpx(nxmx, nymx, nphimx),
-     .        xjpy(nxmx, nymx, nphimx),
-     .        xjpz(nxmx, nymx, nphimx)
+      real, dimension(:,:,:), allocatable :: pcre, pcim, redotj,
+     .     redotje, redotj1, redotj2,redotj3,redotjt
 
-      real pcre(nxmx, nymx, nphimx),
-     .     pcim(nxmx, nymx, nphimx),
-     .     redotj(nxmx, nymx, nphimx),
-     .     redotje(nxmx, nymx, nphimx),
-     .     redotj1(nxmx, nymx, nphimx),
-     .     redotj2(nxmx, nymx, nphimx),
-     .     redotj3(nxmx, nymx, nphimx),
-     .     redotjt(nxmx, nymx, nphimx)
+      real, dimension(:,:,:), allocatable :: bxn, byn, bzn, bmod
 
+      real, dimension(:,:,:), allocatable :: uxx, uxy, uxz,
+     .     uyx, uyy, uyz, uzx, uzy, uzz
+      real, dimension(:,:,:), allocatable :: dxuxx, dxuxy, dxuxz,
+     .     dxuyx, dxuyy, dxuyz,
+     .     dxuzx, dxuzy, dxuzz
+      real, dimension(:,:,:), allocatable :: dyuxx, dyuxy, dyuxz,
+     .     dyuyx, dyuyy, dyuyz,
+     .     dyuzx, dyuzy, dyuzz
+      real, dimension(:,:,:), allocatable :: dyyuxx, dyyuxy, dyyuxz,
+     .     dyyuyx, dyyuyy, dyyuyz,
+     .     dyyuzx, dyyuzy, dyyuzz
+      real, dimension(:,:,:), allocatable :: dxyuxx, dxyuxy, dxyuxz,
+     .     dxyuyx, dxyuyy, dxyuyz,
+     .     dxyuzx, dxyuzy, dxyuzz
+      real, dimension(:,:,:), allocatable :: dxxuxx, dxxuxy, dxxuxz,
+     .     dxxuyx, dxxuyy, dxxuyz,
+     .     dxxuzx, dxxuzy, dxxuzz
+      real, dimension(:,:,:), allocatable :: dphiuxx, dphiuxy, dphiuxz,
+     .     dphiuyx, dphiuyy, dphiuyz,
+     .     dphiuzx, dphiuzy, dphiuzz
+      real, dimension(:,:,:), allocatable :: d2phiuxx,d2phiuxy,d2phiuxz,
+     .     d2phiuyx, d2phiuyy, d2phiuyz,
+     .     d2phiuzx, d2phiuzy, d2phiuzz
+      real, dimension(:,:,:), allocatable :: dxphiuxx,dxphiuxy,dxphiuxz,
+     .     dxphiuyx, dxphiuyy, dxphiuyz,
+     .     dxphiuzx, dxphiuzy, dxphiuzz
+      real, dimension(:,:,:), allocatable :: dyphiuxx,dyphiuxy,dyphiuxz,
+     .     dyphiuyx, dyphiuyy, dyphiuyz,
+     .     dyphiuzx, dyphiuzy, dyphiuzz
 
-      real bxn(nxmx, nymx, nphimx),
-     .     byn(nxmx, nymx, nphimx),
-     .     bzn(nxmx, nymx, nphimx),
-     .     bmod(nxmx, nymx, nphimx)
-
-      real uxx(nxmx, nymx, nphimx), uxy(nxmx, nymx, nphimx),
-     .     uxz(nxmx, nymx, nphimx),
-     .     uyx(nxmx, nymx, nphimx), uyy(nxmx, nymx, nphimx),
-     .     uyz(nxmx, nymx, nphimx),
-     .     uzx(nxmx, nymx, nphimx), uzy(nxmx, nymx, nphimx),
-     .     uzz(nxmx, nymx, nphimx)
-
-      real dxuxx(nxmx, nymx, nphimx), dxuxy(nxmx, nymx, nphimx),
-     .     dxuxz(nxmx, nymx, nphimx),
-     .     dxuyx(nxmx, nymx, nphimx), dxuyy(nxmx, nymx, nphimx),
-     .     dxuyz(nxmx, nymx, nphimx),
-     .     dxuzx(nxmx, nymx, nphimx), dxuzy(nxmx, nymx, nphimx),
-     .     dxuzz(nxmx, nymx, nphimx)
-
-      real dyuxx(nxmx, nymx, nphimx), dyuxy(nxmx, nymx, nphimx),
-     .     dyuxz(nxmx, nymx, nphimx),
-     .     dyuyx(nxmx, nymx, nphimx), dyuyy(nxmx, nymx, nphimx),
-     .     dyuyz(nxmx, nymx, nphimx),
-     .     dyuzx(nxmx, nymx, nphimx), dyuzy(nxmx, nymx, nphimx),
-     .     dyuzz(nxmx, nymx, nphimx)
+      real, dimension(:,:,:), allocatable :: gradprlb
 
 
-      real dyyuxx(nxmx, nymx, nphimx), dyyuxy(nxmx, nymx, nphimx),
-     .     dyyuxz(nxmx, nymx, nphimx),
-     .     dyyuyx(nxmx, nymx, nphimx), dyyuyy(nxmx, nymx, nphimx),
-     .     dyyuyz(nxmx, nymx, nphimx),
-     .     dyyuzx(nxmx, nymx, nphimx), dyyuzy(nxmx, nymx, nphimx),
-     .     dyyuzz(nxmx, nymx, nphimx)
+      complex, dimension(:,:,:), allocatable :: ealphak, ebetak, ebk
 
-      real dxyuxx(nxmx, nymx, nphimx), dxyuxy(nxmx, nymx, nphimx),
-     .     dxyuxz(nxmx, nymx, nphimx),
-     .     dxyuyx(nxmx, nymx, nphimx), dxyuyy(nxmx, nymx, nphimx),
-     .     dxyuyz(nxmx, nymx, nphimx),
-     .     dxyuzx(nxmx, nymx, nphimx), dxyuzy(nxmx, nymx, nphimx),
-     .     dxyuzz(nxmx, nymx, nphimx)
+      complex, dimension(:,:,:), allocatable :: ex, ey, ez
+      complex, dimension(:,:,:), allocatable :: ealpha, ebeta, eb
+      complex, dimension(:,:,:), allocatable :: ntilda_e
 
-      real dxxuxx(nxmx, nymx, nphimx), dxxuxy(nxmx, nymx, nphimx),
-     .     dxxuxz(nxmx, nymx, nphimx),
-     .     dxxuyx(nxmx, nymx, nphimx), dxxuyy(nxmx, nymx, nphimx),
-     .     dxxuyz(nxmx, nymx, nphimx),
-     .     dxxuzx(nxmx, nymx, nphimx), dxxuzy(nxmx, nymx, nphimx),
-     .     dxxuzz(nxmx, nymx, nphimx)
-
-      real dphiuxx(nxmx, nymx, nphimx), dphiuxy(nxmx, nymx, nphimx),
-     .     dphiuxz(nxmx, nymx, nphimx),
-     .     dphiuyx(nxmx, nymx, nphimx), dphiuyy(nxmx, nymx, nphimx),
-     .     dphiuyz(nxmx, nymx, nphimx),
-     .     dphiuzx(nxmx, nymx, nphimx), dphiuzy(nxmx, nymx, nphimx),
-     .     dphiuzz(nxmx, nymx, nphimx)
-
-
-      real d2phiuxx(nxmx, nymx, nphimx), d2phiuxy(nxmx, nymx, nphimx),
-     .     d2phiuxz(nxmx, nymx, nphimx),
-     .     d2phiuyx(nxmx, nymx, nphimx), d2phiuyy(nxmx, nymx, nphimx),
-     .     d2phiuyz(nxmx, nymx, nphimx),
-     .     d2phiuzx(nxmx, nymx, nphimx), d2phiuzy(nxmx, nymx, nphimx),
-     .     d2phiuzz(nxmx, nymx, nphimx)
-
-      real dxphiuxx(nxmx, nymx, nphimx), dxphiuxy(nxmx, nymx, nphimx),
-     .     dxphiuxz(nxmx, nymx, nphimx),
-     .     dxphiuyx(nxmx, nymx, nphimx), dxphiuyy(nxmx, nymx, nphimx),
-     .     dxphiuyz(nxmx, nymx, nphimx),
-     .     dxphiuzx(nxmx, nymx, nphimx), dxphiuzy(nxmx, nymx, nphimx),
-     .     dxphiuzz(nxmx, nymx, nphimx)
-
-      real dyphiuxx(nxmx, nymx, nphimx), dyphiuxy(nxmx, nymx, nphimx),
-     .     dyphiuxz(nxmx, nymx, nphimx),
-     .     dyphiuyx(nxmx, nymx, nphimx), dyphiuyy(nxmx, nymx, nphimx),
-     .     dyphiuyz(nxmx, nymx, nphimx),
-     .     dyphiuzx(nxmx, nymx, nphimx), dyphiuzy(nxmx, nymx, nphimx),
-     .     dyphiuzz(nxmx, nymx, nphimx)
-
-      real gradprlb(nxmx, nymx, nphimx)
-
-
-      complex ealphak(nkdim1 : nkdim2, mkdim1 : mkdim2, lkdim1 :lkdim2),
-     .        ebetak(nkdim1 : nkdim2, mkdim1 : mkdim2, lkdim1 : lkdim2),
-     .        ebk(nkdim1 : nkdim2, mkdim1 : mkdim2, lkdim1 : lkdim2)
-
-      complex ex(nxmx, nymx, nphimx),
-     .        ey(nxmx, nymx, nphimx),
-     .        ez(nxmx, nymx, nphimx)
-
-      complex ealpha(nxmx, nymx, nphimx),
-     .        ebeta(nxmx, nymx, nphimx),
-     .        eb(nxmx, nymx, nphimx)
-
-      complex ntilda_e(nxmx, nymx, nphimx)
-
-
-      complex xx(nkdim1 : nkdim2, 1 : nxmx),
-     .        yy(mkdim1 : mkdim2, 1 : nymx),
-     .        zz(lkdim1 : lkdim2, 1 : nphimx)
+      complex, dimension(:,:), allocatable :: xx, yy, zz
 
 
 
@@ -380,8 +288,6 @@ c***  3-D arrays:
 
       complex dezdx, dezdy, deydx, dexdy
       complex adisp(nxmx, nymx), acold(nxmx, nymx)
-      real reson1(nxmx, nymx, nphimx),
-     .     reson2(nxmx, nymx, nphimx)
 
       complex bxwave(nxmx, nymx), bywave(nxmx, nymx), bzwave(nxmx, nymx)
       real spx(nxmx, nymx), spy(nxmx, nymx), spz(nxmx, nymx)
@@ -389,22 +295,15 @@ c***  3-D arrays:
 
       complex pc
 
-      real wdote(nxmx, nymx, nphimx), wdoti1(nxmx, nymx, nphimx),
-     .     wdoti2(nxmx, nymx, nphimx), wdoti3(nxmx, nymx, nphimx),
-     .     wdot(nxmx, nymx, nphimx)
+      real, dimension(:,:,:), allocatable :: reson1, reson2
+
+      real, dimension(:,:,:), allocatable :: wdote, wdoti1, wdoti2,
+     .     wdoti3, wdot
       real fye, fyi1, fyi2, fyi3, fy
 
-!      real fype(nxmx, nymx), fypi1(nxmx, nymx),
-!     .     fypi2(nxmx, nymx), fypi3(nxmx, nymx), fyp(nxmx, nymx)
-
-      real fx0e(nxmx, nymx, nphimx), fx0i1(nxmx, nymx, nphimx),
-     .     fx0i2(nxmx, nymx, nphimx), fx0i3(nxmx, nymx, nphimx),
-     .     fy0e(nxmx, nymx, nphimx), fy0i1(nxmx, nymx, nphimx),
-     .     fy0i2(nxmx, nymx, nphimx), fy0i3(nxmx, nymx, nphimx),
-     .     fz0e(nxmx, nymx, nphimx), fz0i1(nxmx, nymx, nphimx),
-     .     fz0i2(nxmx, nymx, nphimx), fz0i3(nxmx, nymx, nphimx),
-     .     fx0(nxmx, nymx, nphimx), fy0(nxmx, nymx, nphimx),
-     .     fz0(nxmx, nymx, nphimx)
+      real, dimension(:,:,:), allocatable :: fype, fypi1, fypi2, fypi3,
+     .     fyp, fx0e, fx0i1, fx0i2, fx0i3, fy0e, fy0i1, fy0i2, fy0i3,
+     .     fz0e, fz0i1, fz0i2, fz0i3, fx0, fy0, fz0
 
       real denom, fz0tot
 
@@ -578,7 +477,176 @@ c        integer, dimension(:,:,:), allocatable :: mask2
       integer indxg2p, indxl2g
       external indxg2p, indxl2g
 
+*     ---------------
+*     allocate arrays
+*     ---------------
 
+      allocate( xjx(nxmx, nymx, nphimx),
+     .        xjy(nxmx, nymx, nphimx),
+     .        xjz(nxmx, nymx, nphimx) )
+
+      allocate( psi(nxmx, nymx, nphimx),
+     .     thetap(nxmx, nymx, nphimx),
+     .     rho(nxmx, nymx, nphimx),
+     .     xkte(nxmx, nymx, nphimx),
+     .     xkti(nxmx, nymx, nphimx),
+     .     xnea(nxmx, nymx, nphimx),
+     .     xn1a(nxmx, nymx, nphimx),
+     .     xn2a(nxmx, nymx, nphimx),
+     .     xn3a(nxmx, nymx, nphimx),
+     .     omgce(nxmx, nymx, nphimx),
+     .     omgci1(nxmx, nymx, nphimx),
+     .     omgci2(nxmx, nymx, nphimx),
+     .     omgci3(nxmx, nymx, nphimx),
+     .     omgpe2(nxmx, nymx, nphimx),
+     .     omgp12(nxmx, nymx, nphimx),
+     .     omgp22(nxmx, nymx, nphimx),
+     .     omgp32(nxmx, nymx, nphimx) )
+
+
+      allocate( xjpxe(nxmx, nymx, nphimx),
+     .        xjpye(nxmx, nymx, nphimx),
+     .        xjpze(nxmx, nymx, nphimx),
+     .        xjpx1(nxmx, nymx, nphimx),
+     .        xjpy1(nxmx, nymx, nphimx),
+     .        xjpz1(nxmx, nymx, nphimx),
+     .        xjpx2(nxmx, nymx, nphimx),
+     .        xjpy2(nxmx, nymx, nphimx),
+     .        xjpz2(nxmx, nymx, nphimx),
+     .        xjpx3(nxmx, nymx, nphimx),
+     .        xjpy3(nxmx, nymx, nphimx),
+     .        xjpz3(nxmx, nymx, nphimx),
+     .        xjpx(nxmx, nymx, nphimx),
+     .        xjpy(nxmx, nymx, nphimx),
+     .        xjpz(nxmx, nymx, nphimx) )
+
+      allocate( pcre(nxmx, nymx, nphimx),
+     .     pcim(nxmx, nymx, nphimx),
+     .     redotj(nxmx, nymx, nphimx),
+     .     redotje(nxmx, nymx, nphimx),
+     .     redotj1(nxmx, nymx, nphimx),
+     .     redotj2(nxmx, nymx, nphimx),
+     .     redotj3(nxmx, nymx, nphimx),
+     .     redotjt(nxmx, nymx, nphimx) )
+
+
+      allocate( bxn(nxmx, nymx, nphimx),
+     .     byn(nxmx, nymx, nphimx),
+     .     bzn(nxmx, nymx, nphimx),
+     .     bmod(nxmx, nymx, nphimx) )
+
+      allocate( uxx(nxmx, nymx, nphimx), uxy(nxmx, nymx, nphimx),
+     .     uxz(nxmx, nymx, nphimx),
+     .     uyx(nxmx, nymx, nphimx), uyy(nxmx, nymx, nphimx),
+     .     uyz(nxmx, nymx, nphimx),
+     .     uzx(nxmx, nymx, nphimx), uzy(nxmx, nymx, nphimx),
+     .     uzz(nxmx, nymx, nphimx) )
+
+      allocate( dxuxx(nxmx, nymx, nphimx), dxuxy(nxmx, nymx, nphimx),
+     .     dxuxz(nxmx, nymx, nphimx),
+     .     dxuyx(nxmx, nymx, nphimx), dxuyy(nxmx, nymx, nphimx),
+     .     dxuyz(nxmx, nymx, nphimx),
+     .     dxuzx(nxmx, nymx, nphimx), dxuzy(nxmx, nymx, nphimx),
+     .     dxuzz(nxmx, nymx, nphimx) )
+
+      allocate( dyuxx(nxmx, nymx, nphimx), dyuxy(nxmx, nymx, nphimx),
+     .     dyuxz(nxmx, nymx, nphimx),
+     .     dyuyx(nxmx, nymx, nphimx), dyuyy(nxmx, nymx, nphimx),
+     .     dyuyz(nxmx, nymx, nphimx),
+     .     dyuzx(nxmx, nymx, nphimx), dyuzy(nxmx, nymx, nphimx),
+     .     dyuzz(nxmx, nymx, nphimx) )
+
+
+      allocate( dyyuxx(nxmx, nymx, nphimx), dyyuxy(nxmx, nymx, nphimx),
+     .     dyyuxz(nxmx, nymx, nphimx),
+     .     dyyuyx(nxmx, nymx, nphimx), dyyuyy(nxmx, nymx, nphimx),
+     .     dyyuyz(nxmx, nymx, nphimx),
+     .     dyyuzx(nxmx, nymx, nphimx), dyyuzy(nxmx, nymx, nphimx),
+     .     dyyuzz(nxmx, nymx, nphimx) )
+
+      allocate( dxyuxx(nxmx, nymx, nphimx), dxyuxy(nxmx, nymx, nphimx),
+     .     dxyuxz(nxmx, nymx, nphimx),
+     .     dxyuyx(nxmx, nymx, nphimx), dxyuyy(nxmx, nymx, nphimx),
+     .     dxyuyz(nxmx, nymx, nphimx),
+     .     dxyuzx(nxmx, nymx, nphimx), dxyuzy(nxmx, nymx, nphimx),
+     .     dxyuzz(nxmx, nymx, nphimx) )
+
+      allocate( dxxuxx(nxmx, nymx, nphimx), dxxuxy(nxmx, nymx, nphimx),
+     .     dxxuxz(nxmx, nymx, nphimx),
+     .     dxxuyx(nxmx, nymx, nphimx), dxxuyy(nxmx, nymx, nphimx),
+     .     dxxuyz(nxmx, nymx, nphimx),
+     .     dxxuzx(nxmx, nymx, nphimx), dxxuzy(nxmx, nymx, nphimx),
+     .     dxxuzz(nxmx, nymx, nphimx) )
+
+      allocate( dphiuxx(nxmx, nymx, nphimx), dphiuxy(nxmx, nymx,nphimx),
+     .     dphiuxz(nxmx, nymx, nphimx),
+     .     dphiuyx(nxmx, nymx, nphimx), dphiuyy(nxmx, nymx, nphimx),
+     .     dphiuyz(nxmx, nymx, nphimx),
+     .     dphiuzx(nxmx, nymx, nphimx), dphiuzy(nxmx, nymx, nphimx),
+     .     dphiuzz(nxmx, nymx, nphimx) )
+
+
+      allocate( d2phiuxx(nxmx, nymx, nphimx),d2phiuxy(nxmx,nymx,nphimx),
+     .     d2phiuxz(nxmx, nymx, nphimx),
+     .     d2phiuyx(nxmx, nymx, nphimx), d2phiuyy(nxmx, nymx, nphimx),
+     .     d2phiuyz(nxmx, nymx, nphimx),
+     .     d2phiuzx(nxmx, nymx, nphimx), d2phiuzy(nxmx, nymx, nphimx),
+     .     d2phiuzz(nxmx, nymx, nphimx) )
+
+      allocate( dxphiuxx(nxmx, nymx, nphimx),dxphiuxy(nxmx,nymx,nphimx),
+     .     dxphiuxz(nxmx, nymx, nphimx),
+     .     dxphiuyx(nxmx, nymx, nphimx), dxphiuyy(nxmx, nymx, nphimx),
+     .     dxphiuyz(nxmx, nymx, nphimx),
+     .     dxphiuzx(nxmx, nymx, nphimx), dxphiuzy(nxmx, nymx, nphimx),
+     .     dxphiuzz(nxmx, nymx, nphimx) )
+
+      allocate( dyphiuxx(nxmx, nymx, nphimx),dyphiuxy(nxmx,nymx,nphimx),
+     .     dyphiuxz(nxmx, nymx, nphimx),
+     .     dyphiuyx(nxmx, nymx, nphimx), dyphiuyy(nxmx, nymx, nphimx),
+     .     dyphiuyz(nxmx, nymx, nphimx),
+     .     dyphiuzx(nxmx, nymx, nphimx), dyphiuzy(nxmx, nymx, nphimx),
+     .     dyphiuzz(nxmx, nymx, nphimx) )
+
+      allocate( gradprlb(nxmx, nymx, nphimx) )
+
+
+      allocate( ealphak(nkdim1 : nkdim2, mkdim1 : mkdim2,lkdim1:lkdim2),
+     .        ebetak(nkdim1 : nkdim2, mkdim1 : mkdim2, lkdim1 : lkdim2),
+     .        ebk(nkdim1 : nkdim2, mkdim1 : mkdim2, lkdim1 : lkdim2) )
+
+      allocate( ex(nxmx, nymx, nphimx),
+     .        ey(nxmx, nymx, nphimx),
+     .        ez(nxmx, nymx, nphimx) )
+
+      allocate( ealpha(nxmx, nymx, nphimx),
+     .        ebeta(nxmx, nymx, nphimx),
+     .        eb(nxmx, nymx, nphimx) )
+
+      allocate( ntilda_e(nxmx, nymx, nphimx) )
+
+
+      allocate( xx(nkdim1 : nkdim2, 1 : nxmx),
+     .        yy(mkdim1 : mkdim2, 1 : nymx),
+     .        zz(lkdim1 : lkdim2, 1 : nphimx) )
+
+      allocate( reson1(nxmx, nymx, nphimx),
+     .     reson2(nxmx, nymx, nphimx) )
+
+      allocate( wdote(nxmx, nymx, nphimx), wdoti1(nxmx, nymx, nphimx),
+     .     wdoti2(nxmx, nymx, nphimx), wdoti3(nxmx, nymx, nphimx),
+     .     wdot(nxmx, nymx, nphimx) )
+
+!      allocate( fype(nxmx, nymx), fypi1(nxmx, nymx),
+!     .     fypi2(nxmx, nymx), fypi3(nxmx, nymx), fyp(nxmx, nymx) )
+
+      allocate( fx0e(nxmx, nymx, nphimx), fx0i1(nxmx, nymx, nphimx),
+     .     fx0i2(nxmx, nymx, nphimx), fx0i3(nxmx, nymx, nphimx),
+     .     fy0e(nxmx, nymx, nphimx), fy0i1(nxmx, nymx, nphimx),
+     .     fy0i2(nxmx, nymx, nphimx), fy0i3(nxmx, nymx, nphimx),
+     .     fz0e(nxmx, nymx, nphimx), fz0i1(nxmx, nymx, nphimx),
+     .     fz0i2(nxmx, nymx, nphimx), fz0i3(nxmx, nymx, nphimx),
+     .     fx0(nxmx, nymx, nphimx), fy0(nxmx, nymx, nphimx),
+     .     fz0(nxmx, nymx, nphimx) )
 
 * --------------------------
 * setup parallel environment
@@ -4988,6 +5056,84 @@ c         close(29)
       deallocate( p_ipiv )
 
  9000 continue
+
+      deallocate( xjx, xjy, xjz )
+
+      deallocate( psi, thetap, rho, xkte, xkti, xnea, xn1a, xn2a, xn3a,
+     .     omgce, omgci1, omgci2, omgci3, omgpe2, omgp12, omgp22,omgp32)
+
+
+      deallocate( xjpxe, xjpye, xjpze, xjpx1, xjpy1, xjpz1, xjpx2,
+     .     xjpy2, xjpz2, xjpx3, xjpy3, xjpz3, xjpx, xjpy, xjpz )
+
+      deallocate( pcre, pcim, redotj, redotje, redotj1, redotj2,
+     .     redotj3, redotjt )
+
+
+      deallocate( bxn, byn, bzn, bmod )
+
+      deallocate( uxx, uxy, uxz, uyx, uyy, uyz, uzx, uzy, uzz )
+
+      deallocate( dxuxx, dxuxy, dxuxz,
+     .     dxuyx, dxuyy, dxuyz,
+     .     dxuzx, dxuzy, dxuzz )
+
+      deallocate( dyuxx, dyuxy, dyuxz,
+     .     dyuyx, dyuyy, dyuyz,
+     .     dyuzx, dyuzy, dyuzz )
+
+
+      deallocate( dyyuxx, dyyuxy, dyyuxz,
+     .     dyyuyx, dyyuyy, dyyuyz,
+     .     dyyuzx, dyyuzy, dyyuzz )
+
+      deallocate( dxyuxx, dxyuxy, dxyuxz,
+     .     dxyuyx, dxyuyy, dxyuyz,
+     .     dxyuzx, dxyuzy, dxyuzz )
+
+      deallocate( dxxuxx, dxxuxy, dxxuxz,
+     .     dxxuyx, dxxuyy, dxxuyz,
+     .     dxxuzx, dxxuzy, dxxuzz )
+
+      deallocate( dphiuxx, dphiuxy, dphiuxz,
+     .     dphiuyx, dphiuyy, dphiuyz,
+     .     dphiuzx, dphiuzy, dphiuzz )
+
+
+      deallocate( d2phiuxx,d2phiuxy, d2phiuxz,
+     .     d2phiuyx, d2phiuyy, d2phiuyz,
+     .     d2phiuzx, d2phiuzy, d2phiuzz )
+
+      deallocate( dxphiuxx,dxphiuxy, dxphiuxz,
+     .     dxphiuyx, dxphiuyy, dxphiuyz,
+     .     dxphiuzx, dxphiuzy, dxphiuzz )
+
+      deallocate( dyphiuxx,dyphiuxy, dyphiuxz,
+     .     dyphiuyx, dyphiuyy, dyphiuyz,
+     .     dyphiuzx, dyphiuzy, dyphiuzz )
+
+      deallocate( gradprlb )
+
+
+      deallocate( ealphak, ebetak, ebk )
+
+      deallocate( ex, ey, ez )
+
+      deallocate( ealpha, ebeta, eb )
+
+      deallocate( ntilda_e )
+
+
+      deallocate( xx, yy, zz )
+
+      deallocate( reson1, reson2 )
+
+      deallocate( wdote, wdoti1, wdoti2, wdoti3, wdot )
+
+!      deallocate( fype, fypi1, fypi2, fypi3, fyp )
+
+      deallocate( fx0e, fx0i1, fx0i2, fx0i3, fy0e, fy0i1, fy0i2, fy0i3,
+     .     fz0e, fz0i1, fz0i2, fz0i3, fx0, fy0, fz0 )
 
       if (myid .eq. 0) then
          close(34)
