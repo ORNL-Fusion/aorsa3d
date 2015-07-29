@@ -33,6 +33,9 @@
 
       integer nkx1, nkx2, nldim, nldim3, nky1, nky2, iant, nphi1, nphi2
 
+      real :: kperp_max
+      real  kperp_max_actual
+
       real tmem, tsys, tio, ttotal, time0, time, cpu, dummy, second1
       real time1, time2, tmin1, tmin2, dum
       real tmin, gflops, gflopsp, ops, theta_antr
@@ -97,12 +100,15 @@
 
 
       real, dimension(:),   allocatable :: UPERP, UPARA
+      real, dimension(:),   allocatable :: VPERP, VPARA
       real, dimension(:),   allocatable :: UPERP_work, UPARA_work
 
       real, dimension(:,:), allocatable :: DFDUPERe, DFDUPARe      
       real, dimension(:,:), allocatable :: DFDUPER1, DFDUPAR1
       real, dimension(:,:), allocatable :: DFDUPER2, DFDUPAR2
       real, dimension(:,:), allocatable :: DFDUPER3, DFDUPAR3
+
+      real, dimension(:,:), allocatable :: f
 
       real, dimension(:,:,:), allocatable :: fe_cql_cart
       real, dimension(:,:,:), allocatable :: dfe_cql_uprp
@@ -127,7 +133,7 @@ c***  3-D arrays:
 
       real, dimension(:,:,:), allocatable :: psi, thetap, rho, xkte,
      .     xkti, xnea, xn1a, xn2a, xn3a, omgce, omgci1, omgci2, omgci3,
-     .     omgpe2, omgp12, omgp22, omgp32
+     .     omgpe2, omgp12, omgp22, omgp32, bmod, bmod_mid
 
       complex, dimension(:,:,:), allocatable :: xjpxe, xjpye, xjpze,
      .     xjpx1, xjpy1, xjpz1, xjpx2, xjpy2, xjpz2,
@@ -136,7 +142,7 @@ c***  3-D arrays:
       real, dimension(:,:,:), allocatable :: pcre, pcim, redotj,
      .     redotje, redotj1, redotj2,redotj3,redotjt
 
-      real, dimension(:,:,:), allocatable :: bxn, byn, bzn, bmod
+      real, dimension(:,:,:), allocatable :: bxn, byn, bzn
 
       real, dimension(:,:,:), allocatable :: uxx, uxy, uxz,
      .     uyx, uyy, uyz, uzx, uzy, uzz
@@ -232,6 +238,7 @@ c***  3-D arrays:
      .    rhonorm, xiota0, rholim, psi1,
      .    xwleft, xwright, psiright,
      .    psi_lim
+      real telimj, tilimj, ti2limj, ti3limj
       real dxdrho(nxmx, nymx), dzdrho(nxmx, nymx)
       real xkphi, xktau, xkrho, xkphi0, xnphi, xnphi0
       real rplasm, rlim
@@ -501,7 +508,9 @@ c        integer, dimension(:,:,:), allocatable :: mask2
      .     omgpe2(nxmx, nymx, nphimx),
      .     omgp12(nxmx, nymx, nphimx),
      .     omgp22(nxmx, nymx, nphimx),
-     .     omgp32(nxmx, nymx, nphimx) )
+     .     omgp32(nxmx, nymx, nphimx),
+     .     bmod(nxmx, nymx, nphimx),
+     .     bmod_mid(nxmx, nymx, nphimx) )
 
 
       allocate( xjpxe(nxmx, nymx, nphimx),
@@ -532,8 +541,7 @@ c        integer, dimension(:,:,:), allocatable :: mask2
 
       allocate( bxn(nxmx, nymx, nphimx),
      .     byn(nxmx, nymx, nphimx),
-     .     bzn(nxmx, nymx, nphimx),
-     .     bmod(nxmx, nymx, nphimx) )
+     .     bzn(nxmx, nymx, nphimx) )
 
       allocate( uxx(nxmx, nymx, nphimx), uxy(nxmx, nymx, nphimx),
      .     uxz(nxmx, nymx, nphimx),
@@ -807,8 +815,6 @@ c     .        form='formatted')
 
       t0e = t0e * q
       t0i = t0i * q
-      telim = telim * q
-      tilim = tilim * q
 
       teedge = teedge * q
 
@@ -889,7 +895,7 @@ c      shearedge = domgk / xkthdx
 	 write (6, *)
          write (6, *) "nnodex  = ", nnodex
          write (6, *) "nnodey  = ", nnodey
-         write (6, *) "nnodephi = ", nnodey
+         write (6, *) "nnodephi = ", nnodephi
 
 	 write (6, *)
 	 write (6, *) "nprow   = ", nprow
@@ -912,7 +918,7 @@ c      shearedge = domgk / xkthdx
 	 write (15, *)
          write (15, *) "nnodex  = ", nnodex
          write (15, *) "nnodey  = ", nnodey
-         write (15, *) "nnodephi = ", nnodey
+         write (15, *) "nnodephi = ", nnodephi
 
 	 write (15, *)
 	 write (15, *) "nprow   = ", nprow
@@ -1015,6 +1021,9 @@ c         write(15, 7017)rhoi10
          write(15, *) "psilim = ", psilim
       end if
 
+      telimj   = telim  * q
+      tilimj   = tilim  * q
+
       t1 = second1(dummy)
 
 *     ------------------------------------
@@ -1110,10 +1119,14 @@ c         write(15, 7017)rhoi10
 
          allocate( UPERP(nuper) )
          allocate( UPARA(nupar) )
+         allocate( VPERP(nuper) )
+         allocate( VPARA(nupar) )
 	 
          allocate( UPERP_work(nuper) )
          allocate( UPARA_work(nupar) )
-	 
+
+	 allocate( f(nuper, nupar) )
+
          allocate( dfdupere(nuper, nupar) )
          allocate( dfdupare(nuper, nupar) )
 	 
@@ -1133,7 +1146,9 @@ c         write(15, 7017)rhoi10
 	 UPARA = 0.0
 	 UPERP_work = 0.0
 	 UPARA_work = 0.0
-	 
+
+	 f = 0.0
+
 	 dfdupere = 0.0
 	 dfdupare = 0.0
 	 
@@ -1148,6 +1163,295 @@ c         write(15, 7017)rhoi10
 
       end if
 
+      if(ndisti1   .ne. 0 .or.
+     .   ndisti2   .ne. 0 .or.
+     .   ndisti3   .ne. 0 .or.
+     .   ndiste    .ne. 0)   then
+     
+         
+!        -----------------
+!        allocate arrays
+!        -----------------
+         allocate( UPERP(nuper) )
+         allocate( UPARA(nupar) )
+         allocate( VPERP(nuper) )
+         allocate( VPARA(nupar) )
+         allocate( UPERP_work(nuper) )
+         allocate( UPARA_work(nupar) )
+	 
+	 
+	 allocate( f(nuper, nupar) )
+	 	 
+         allocate( dfdupere(nuper, nupar) )
+         allocate( dfdupare(nuper, nupar) )	 
+	 
+         allocate( dfduper1(nuper, nupar) )
+         allocate( dfdupar1(nuper, nupar) )
+	 
+	 allocate( dfduper2(nuper, nupar) )
+         allocate( dfdupar2(nuper, nupar) )
+	 
+	 allocate( dfduper3(nuper, nupar) )
+         allocate( dfdupar3(nuper, nupar) )
+ 	 
+	
+	 UPERP = 0.0
+	 UPARA = 0.0
+	 UPERP_work = 0.0
+	 UPARA_work = 0.0
+
+	 f = 0.0
+	 
+	 dfdupere = 0.0
+	 dfdupare = 0.0	 
+	 
+	 dfduper1 = 0.0
+	 dfdupar1 = 0.0
+	 
+	 dfduper2 = 0.0
+	 dfdupar2 = 0.0	 
+	 
+	 dfduper3 = 0.0
+	 dfdupar3 = 0.0
+
+         allocate( fe_cql_cart(nuper, nupar, n_psi_dim) )
+         allocate( dfe_cql_uprp(nuper, nupar, n_psi_dim) )
+         allocate( dfe_cql_uprl(nuper, nupar, n_psi_dim) )
+      
+         allocate( f1_cql_cart(nuper, nupar, n_psi_dim) )
+         allocate( df1_cql_uprp(nuper, nupar, n_psi_dim) )
+         allocate( df1_cql_uprl(nuper, nupar, n_psi_dim) )
+      
+         allocate( f2_cql_cart(nuper, nupar, n_psi_dim) )
+         allocate( df2_cql_uprp(nuper, nupar, n_psi_dim) )
+         allocate( df2_cql_uprl(nuper, nupar, n_psi_dim) )
+	 
+	 allocate( f3_cql_cart(nuper, nupar, n_psi_dim) )
+         allocate( df3_cql_uprp(nuper, nupar, n_psi_dim) )
+         allocate( df3_cql_uprl(nuper, nupar, n_psi_dim) )
+      
+      	 
+
+	 fe_cql_cart = 0.0
+	 dfe_cql_uprp = 0.0
+	 dfe_cql_uprl = 0.0
+	
+	 f1_cql_cart = 0.0
+	 df1_cql_uprp = 0.0
+	 df1_cql_uprl = 0.0
+	
+	 f2_cql_cart = 0.0
+	 df2_cql_uprp = 0.0
+	 df2_cql_uprl = 0.0
+	
+	 f3_cql_cart = 0.0
+	 df3_cql_uprp = 0.0
+	 df3_cql_uprl = 0.0
+
+         call blacs_barrier(icontxt, 'All')
+
+         if (ndiste .eq. 1) then
+
+            n_psi = nnoderho
+            vce_mks = 3.0 * sqrt(2.0 * te0 * q / xme)
+            UminPara = -1.0
+            UmaxPara = 1.0
+
+            do n = 1, n_psi
+               rho_a(n) = real(n-1) / real(n_psi-1)
+            end do
+            do n = 1, NUPER
+               UPERP(n) = real(n-1) / real(NUPER-1)
+            end do
+            do m = 1, NUPAR
+               UPARA(m) = UminPara
+     .             + (UmaxPara - UminPara) * (real(m-1)/real(NUPAR-1))
+            end do
+
+            do n = 1, NUPER
+               do m = 1, NUPAR
+                  do l = 1, n_psi
+                     fe_cql_cart(n, m, l)
+     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
+     .                   * ((3.0 / sqrt(pi))**3)
+                  end do
+               end do
+            end do
+            do n = 1, NUPER
+               do m = 1, NUPAR
+                  do l = 1, n_psi
+                     dfe_cql_uprp(n, m, l)
+     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
+     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * uperp(n))
+                  end do
+               end do
+            end do
+            do n = 1, NUPER
+               do m = 1, NUPAR
+                  do l = 1, n_psi
+                     dfe_cql_uprl(n, m, l)
+     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
+     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * upara(n))
+                  end do
+               end do
+            end do
+
+	 end if
+
+         call blacs_barrier(icontxt, 'All')
+
+         if (ndisti1 .eq. 1) then
+
+            n_psi = nnoderho
+            vc1_mks = 3.0 * sqrt(2.0 * ti0 * q / xmi1)
+            UminPara = -1.0
+            UmaxPara = 1.0
+
+            do n = 1, n_psi
+               rho_a(n) = real(n-1) / real(n_psi-1)
+            end do
+            do n = 1, NUPER
+               UPERP(n) = real(n-1) / real(NUPER-1)
+            end do
+            do m = 1, NUPAR
+               UPARA(m) = UminPara
+     .             + (UmaxPara - UminPara) * (real(m-1)/real(NUPAR-1))
+            end do
+
+            do n = 1, NUPER
+               do m = 1, NUPAR
+                  do l = 1, n_psi
+                     f1_cql_cart(n, m, l)
+     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
+     .                   * ((3.0 / sqrt(pi))**3)
+                  end do
+               end do
+            end do
+            do n = 1, NUPER
+               do m = 1, NUPAR
+                  do l = 1, n_psi
+                     df1_cql_uprp(n, m, l)
+     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
+     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * uperp(n))
+                  end do
+               end do
+            end do
+            do n = 1, NUPER
+               do m = 1, NUPAR
+                  do l = 1, n_psi
+                     df1_cql_uprl(n, m, l)
+     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
+     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * upara(n))
+                  end do
+               end do
+            end do
+
+	 end if
+
+         call blacs_barrier(icontxt, 'All')
+
+         if (ndisti2 .eq. 1) then
+
+            n_psi = nnoderho
+            vc1_mks = 3.0 * sqrt(2.0 * ti0 * q / xmi2)
+            UminPara = -1.0
+            UmaxPara = 1.0
+
+            do n = 1, n_psi
+               rho_a(n) = real(n-1) / real(n_psi-1)
+            end do
+            do n = 1, NUPER
+               UPERP(n) = real(n-1) / real(NUPER-1)
+            end do
+            do m = 1, NUPAR
+               UPARA(m) = UminPara
+     .             + (UmaxPara - UminPara) * (real(m-1)/real(NUPAR-1))
+            end do
+
+            do n = 1, NUPER
+               do m = 1, NUPAR
+                  do l = 1, n_psi
+                     f2_cql_cart(n, m, l)
+     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
+     .                   * ((3.0 / sqrt(pi))**3)
+                  end do
+               end do
+            end do
+            do n = 1, NUPER
+               do m = 1, NUPAR
+                  do l = 1, n_psi
+                     df2_cql_uprp(n, m, l)
+     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
+     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * uperp(n))
+                  end do
+               end do
+            end do
+            do n = 1, NUPER
+               do m = 1, NUPAR
+                  do l = 1, n_psi
+                     df2_cql_uprl(n, m, l)
+     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
+     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * upara(n))
+                  end do
+               end do
+            end do
+
+	 end if
+
+
+
+         if(myid .eq. 0)then
+            WRITE (6,*)
+            WRITE (6,*) "nuper = ",  nuper
+            WRITE (6,*) "nupar = ",  nupar
+            WRITE (6,*) "n_psi = ",  n_psi
+
+            WRITE (6,*)
+            WRITE (6,*) "vce_mks = ", vce_mks
+	    WRITE (6,*) "vc1_mks = ", vc1_mks
+            WRITE (6,*) "vc2_mks = ", vc2_mks
+            WRITE (6,*) "vc3_mks = ", vc3_mks
+
+            write(6, *)
+            write(6, *) "rho/a(i_psi)"
+            write(6, 310) (rho_a(n), n = 1, n_psi)
+
+            write(6, *)
+            write(6, *) "uperp ="
+            write(6, 310) (uperp(n), n = 1, nuper)
+
+            write(6, *)
+            write(6, *) "upara ="
+            write(6, 310) (upara(n), n = 1, nupar)
+
+
+
+            WRITE (15,*)
+            WRITE (15,*) "nuper = ",  nuper
+            WRITE (15,*) "nupar = ",  nupar
+            WRITE (15,*) "n_psi = ",  n_psi
+
+            WRITE (15,*)
+            WRITE (15,*) "vce_mks = ", vce_mks
+	    WRITE (15,*) "vc1_mks = ", vc1_mks
+            WRITE (15,*) "vc2_mks = ", vc2_mks
+            WRITE (15,*) "vc3_mks = ", vc3_mks
+
+            write(15, *)
+            write(15, *) "rho/a(i_psi)"
+            write(15, 310) (rho_a(n), n = 1, n_psi)
+
+            write(15, *)
+            write(15, *) "uperp ="
+            write(15, 310) (uperp(n), n = 1, nuper)
+
+            write(15, *)
+            write(15, *) "upara ="
+            write(15, 310) (upara(n), n = 1, nupar)
+         end if
+
+      end if
+	 
 
       if(myid .eq. 0)write(53, 309) nnodex, nnodey, nnodephi
 
@@ -1155,6 +1459,17 @@ c         write(15, 7017)rhoi10
       xwright = rwright - rt
       xmax = rwright - rwleft
       ymax = ytop - ybottom
+
+      if(ndisti1   .ne. 0 .or.
+     .   ndisti2   .ne. 0 .or.
+     .   ndisti3   .ne. 0 .or.
+     .   ndiste    .ne. 0)   then
+      
+         deallocate( fe_cql_cart )
+         deallocate( f1_cql_cart )
+         deallocate( f2_cql_cart )
+         deallocate( f3_cql_cart )
+      end if
 
 *     ---------------------------------------
 *     Define x mesh: x(i), xprime(i), capr(i)
@@ -1664,6 +1979,16 @@ c     .               / rhonorm
 
       end if
 
+*     -----------------------
+*     Calculate bmod_mid(i,j)
+*     -----------------------
+!      do i = 1, nnodex
+!         do j = 1, nnodey
+!            call midplane(i, j, bmod, bmod_mid(i,j), rho,
+!     .                nxmx, nymx, nnodex, nnodey, capr, rt, b0, jmid)
+!	   end do
+!      end do
+
 
 *     ------------------------------
 *     Calculate the antenna current
@@ -1694,7 +2019,7 @@ c     .               / rhonorm
             end if
          end do
       end if
-      if (myid .eq. 1) then
+      if (myid .eq. 0) then
          write(6, *) "rant1 =", rant1
       end if
 
@@ -1765,10 +2090,10 @@ c        allocate( mask2(1:nnodex,1:nnodey,1:nnodephi) )
                   xnea(i, j, k) = xnlim
      .                 + (xn0 - xnlim) * gaussian**alphan
 
-                  xkte(i,j,k) = telim
-     .                 + (t0e - telim) * gaussian**alphate
-                  xkti(i,j,k) = tilim
-     .                 + (t0i - tilim) * gaussian**alphati
+                  xkte(i,j,k) = telimj
+     .                 + (t0e - telimj) * gaussian**alphate
+                  xkti(i,j,k) = tilimj
+     .                 + (t0i - tilimj) * gaussian**alphati
                else if (iprofile .eq. 3) then
                   if (psi(i,j,k) .lt. psiplasm) then
                      xnea(i,j,k) = (psi(i,j,k) / psiplasm)**betan
@@ -1777,14 +2102,14 @@ c        allocate( mask2(1:nnodex,1:nnodey,1:nnodephi) )
 
                      xkte(i,j,k) = (psi(i,j,k) / psiplasm)**betate
                      xkte(i,j,k) = (1.0 - xkte(i,j,k))**alphate
-                     xkte(i,j,k) = telim + (t0e - telim) * xkte(i,j,k)
+                     xkte(i,j,k) = telimj + (t0e - telimj) * xkte(i,j,k)
                      xkti(i,j,k) = (psi(i,j,k) / psiplasm)**betati
                      xkti(i,j,k) = (1.0 - xkti(i,j,k))**alphati
-                     xkti(i,j,k) = tilim + (t0i - tilim) * xkti(i,j,k)
+                     xkti(i,j,k) = tilimj + (t0i - tilimj) * xkti(i,j,k)
                   else
                      xnea(i,j,k) = xnlim
-                     xkte(i,j,k) = telim
-                     xkti(i,j,k) = tilim
+                     xkte(i,j,k) = telimj
+                     xkti(i,j,k) = tilimj
                   end if
                end if
 
@@ -2039,6 +2364,11 @@ c         if(nphi .eq. 0)xkzsav(nphi) = 1.0e-04
          if(myid .eq. 0)write(15, 1312)nphi, xkzsav(nphi)
          if(myid .eq. 0)write(6,  1312)nphi, xkzsav(nphi)
       end do
+
+      kperp_max_actual = sqrt(xkxsav(nkx2)**2 + xkysav(nky2)**2
+     .     + (xkzsav(nphi2) / capr(1))**2)
+
+      kperp_max = kperp_max_actual * 2.0
 
       xkx_cutoff = xkxsav(nkx2) * xkperp_cutoff
       xky_cutoff = xkx_cutoff
@@ -2741,8 +3071,10 @@ c        enddo
 
                         if (isigma .eq. 1)then
 
-                           call sigmah_stix_elect(i, j, n, m,
-     .                        bmod(i, j, k), gradprlb(i, j, k),
+                           call sigmad_cql3d(i, j, n, m,
+     .                        rho(i, j, k), rho_a,
+     .                        gradprlb(i, j, k), bmod(i, j, k),
+     .                        bmod_mid(i, j, k),
      .                        xme, qe, xnea(i, j, k), xnuomg,
      .                        xkte(i,j,k), omgce(i,j,k), omgpe2(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
@@ -2755,12 +3087,21 @@ c        enddo
      .                        sigexx, sigexy, sigexz,
      .                        sigeyx, sigeyy, sigeyz,
      .                        sigezx, sigezy, sigezz,
-     .                        delta0, xk0, damping,
-     .                        xkx_cutoff, xky_cutoff, xkz_cutoff)
+     .                        delta0, ndiste, nupar, nuper, n_psi,
+     .                        n_psi_dim, dfdupere, dfdupare,
+     .                        UminPara, UmaxPara, UPERP, UPARA,
+     .                        vce_mks, dfe_cql_uprp, dfe_cql_uprl,
+     .                        nbessj, nkperp, zi, eps0, v0i, omgrf,
+     .                        xk0, kperp_max,
+     .                        i_sav, j_sav, 1, damping,
+     .                        xkx_cutoff, xky_cutoff, xkz_cutoff,
+     .                        rt, nkx2, nky2)
 
 
-                           call sigmah_stix(i, j, n, m,
-     .                        bmod(i, j, k), gradprlb(i, j, k),
+                           call sigmad_cql3d(i, j, n, m,
+     .                        rho(i, j, k), rho_a,
+     .                        gradprlb(i, j, k), bmod(i, j, k),
+     .                        bmod_mid(i, j, k),
      .                        xmi1, qi1, xn1a(i, j, k), xnuomg,
      .                        xkti(i,j,k), omgci1(i,j,k), omgp12(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
@@ -2773,12 +3114,22 @@ c        enddo
      .                        sig1xx, sig1xy, sig1xz,
      .                        sig1yx, sig1yy, sig1yz,
      .                        sig1zx, sig1zy, sig1zz,
-     .                        delta0, xk0)
+     .                        delta0, ndisti1, nupar, nuper, n_psi,
+     .                        n_psi_dim, dfduper1, dfdupar1,
+     .                        UminPara, UmaxPara, UPERP, UPARA,
+     .                        vc1_mks, df1_cql_uprp, df1_cql_uprl,
+     .                        nbessj, nkperp, zi, eps0, v0i, omgrf,
+     .                        xk0, kperp_max,
+     .                        i_sav, j_sav, 1, damping,
+     .                        xkx_cutoff, xky_cutoff, xkz_cutoff,
+     .                        rt, nkx2, nky2)
 
 
                            if(eta2 .ne. 0.0)
-     .                        call sigmah_stix(i, j, n, m,
-     .                        bmod(i, j, k), gradprlb(i, j, k),
+     .                        call sigmad_cql3d(i, j, n, m,
+     .                        rho(i, j, k), rho_a,
+     .                        gradprlb(i, j, k), bmod(i, j, k),
+     .                        bmod_mid(i, j, k),
      .                        xmi2, qi2, xn2a(i, j, k), xnuomg,
      .                        xkti(i,j,k), omgci2(i,j,k), omgp22(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
@@ -2791,14 +3142,24 @@ c        enddo
      .                        sig2xx, sig2xy, sig2xz,
      .                        sig2yx, sig2yy, sig2yz,
      .                        sig2zx, sig2zy, sig2zz,
-     .                        delta0, xk0)
+     .                        delta0, ndisti2, nupar, nuper, n_psi,
+     .                        n_psi_dim, dfduper2, dfdupar2,
+     .                        UminPara, UmaxPara, UPERP, UPARA,
+     .                        vc2_mks, df2_cql_uprp, df2_cql_uprl,
+     .                        nbessj, nkperp, zi, eps0, v0i, omgrf,
+     .                        xk0, kperp_max,
+     .                        i_sav, j_sav, 1, damping,
+     .                        xkx_cutoff, xky_cutoff, xkz_cutoff,
+     .                        rt, nkx2, nky2)
 
 
                            if(eta3 .ne. 0.0)
-     .                        call sigmah_stix(i, j, n, m,
-     .                        bmod(i, j, k), gradprlb(i, j, k),
+     .                        call sigmad_cql3d(i, j, n, m,
+     .                        rho(i, j, k), rho_a,
+     .                        gradprlb(i, j, k), bmod(i, j, k),
+     .                        bmod_mid(i, j, k),
      .                        xmi3, qi3, xn3a(i, j, k), xnuomg,
-     .                         xkti(i,j,k), omgci3(i,j,k), omgp32(i,j,k),
+     .                        xkti(i,j,k), omgci3(i,j,k), omgp32(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -2809,7 +3170,15 @@ c        enddo
      .                        sig3xx, sig3xy, sig3xz,
      .                        sig3yx, sig3yy, sig3yz,
      .                        sig3zx, sig3zy, sig3zz,
-     .                        delta0, xk0)
+     .                        delta0, ndisti3, nupar, nuper, n_psi,
+     .                        n_psi_dim, dfduper3, dfdupar3,
+     .                        UminPara, UmaxPara, UPERP, UPARA,
+     .                        vc3_mks, df3_cql_uprp, df3_cql_uprl,
+     .                        nbessj, nkperp, zi, eps0, v0i, omgrf,
+     .                        xk0, kperp_max,
+     .                        i_sav, j_sav, 1, damping,
+     .                        xkx_cutoff, xky_cutoff, xkz_cutoff,
+     .                        rt, nkx2, nky2)
 
                         end if ! (isigma.eq.1)
 
@@ -5009,9 +5378,12 @@ c         close(29)
 
          deallocate( UPERP )
          deallocate( UPARA )
-	 
+         deallocate( VPERP )
+         deallocate( VPARA )
          deallocate( UPERP_work )
          deallocate( UPARA_work )
+
+         deallocate( f )
 	 
          deallocate( dfdupere )
          deallocate( dfdupare )
@@ -5024,6 +5396,46 @@ c         close(29)
 	 
 	 deallocate( dfduper3 )
          deallocate( dfdupar3 )
+
+      end if
+
+      if(ndisti1   .ne. 0 .or.
+     .   ndisti2   .ne. 0 .or.
+     .   ndisti3   .ne. 0 .or.
+     .   ndiste    .ne. 0)   then
+        
+         deallocate( UPERP )
+         deallocate( UPARA )
+         deallocate( VPERP )
+         deallocate( VPARA )	 
+         deallocate( UPERP_work )
+         deallocate( UPARA_work )
+	 
+         deallocate( f )
+	 
+	 deallocate( dfdupere )
+         deallocate( dfdupare )
+	 
+         deallocate( dfduper1 )
+         deallocate( dfdupar1 )
+	 
+	 deallocate( dfduper2 )
+         deallocate( dfdupar2 )
+	 	
+         deallocate( dfduper3 )
+         deallocate( dfdupar3 )
+	  	 
+         deallocate( dfe_cql_uprp )
+         deallocate( dfe_cql_uprl )
+	 	 
+         deallocate( df1_cql_uprp )
+         deallocate( df1_cql_uprl )	 
+	 	 
+         deallocate( df2_cql_uprp )
+         deallocate( df2_cql_uprl )	 
+
+         deallocate( df3_cql_uprp )
+         deallocate( df3_cql_uprl )	 	 		 
 
       end if
 
@@ -5060,7 +5472,8 @@ c         close(29)
       deallocate( xjx, xjy, xjz )
 
       deallocate( psi, thetap, rho, xkte, xkti, xnea, xn1a, xn2a, xn3a,
-     .     omgce, omgci1, omgci2, omgci3, omgpe2, omgp12, omgp22,omgp32)
+     .     omgce, omgci1, omgci2, omgci3, omgpe2, omgp12, omgp22,omgp32,
+     .     bmod, bmod_mid)
 
 
       deallocate( xjpxe, xjpye, xjpze, xjpx1, xjpy1, xjpz1, xjpx2,
@@ -5070,7 +5483,7 @@ c         close(29)
      .     redotj3, redotjt )
 
 
-      deallocate( bxn, byn, bzn, bmod )
+      deallocate( bxn, byn, bzn)
 
       deallocate( uxx, uxy, uxz, uyx, uyy, uyz, uzx, uzy, uzz )
 

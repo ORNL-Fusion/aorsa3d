@@ -227,7 +227,7 @@ c-----    For black background set ibackground = 1 (box is red)
 
       real :: psilim = 1.00
       real :: psiant = 0.95
-      real :: psiplasm = 0.60
+      real :: psiplasm = 1.00
 
       integer :: nboundary = 1            !-----nboundary: if(nboundary .eq. 1)flux surface boundary (default)
                                           !-----           if(nboundary .eq. 0)square boundary
@@ -246,6 +246,9 @@ c-----    For black background set ibackground = 1 (box is red)
                                           !-----             if (nzeta_wdot .eq. 1) wdot is calculated without interpolation
                                           !-----             if (nzeta_wdot .ge. 2) wdot is calculated with interpolation
                                           !-----                 over nzeta_wdot grid points (default is 51)
+      integer :: i_sav = 0
+      integer :: j_sav = 0      
+
       integer :: ftrap = 1                !-----ftrap = integer flag determining whether trapped particles effect current drive
                                           !        if(ftrap.eq.0) no trapped particles
                                           !        if(ftrap.ne.0) include trapped particles (default)
