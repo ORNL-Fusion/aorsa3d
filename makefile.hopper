@@ -14,156 +14,163 @@ CODEDIR = aorsa3d/04-15-03_AORSA3D_NEWLAB3_SCALAPACK
 
 EXEC = xaorsa3d.$(ARCH)
 
-SOURCE_DIR = $(HOME)/$(CODEDIR)/src
+SRC_DIR = $(HOME)/$(CODEDIR)/src
 
 INCLUDE_DIR = $(HOME)/$(CODEDIR)/src
 
-OBJECT_DIR = $(HOME)/$(CODEDIR)/obj/$(ARCH)
+OBJ_DIR = $(HOME)/$(CODEDIR)/obj/$(ARCH)
 
 OBJFILES = \
- $(OBJECT_DIR)/kron3_mod.o \
- $(OBJECT_DIR)/aorsa3din_mod.o \
- $(OBJECT_DIR)/swim_global_data_mod.o \
- $(OBJECT_DIR)/profile_mod.o \
- $(OBJECT_DIR)/vmec_setup.o \
- $(OBJECT_DIR)/qlsum.o \
- $(OBJECT_DIR)/ql_myra.o \
- $(OBJECT_DIR)/aorsa3dMain.o \
- $(OBJECT_DIR)/aorsaSubs.o \
- $(OBJECT_DIR)/sigma.o \
- $(OBJECT_DIR)/zfunction.o \
- $(OBJECT_DIR)/ztable.o \
- $(OBJECT_DIR)/current.o \
- $(OBJECT_DIR)/fourier.o \
- $(OBJECT_DIR)/assert.o \
- $(OBJECT_DIR)/setupblacs.o \
- $(OBJECT_DIR)/bessel.o \
- $(OBJECT_DIR)/check.o
+ $(OBJ_DIR)/kron3_mod.o \
+ $(OBJ_DIR)/aorsa3din_mod.o \
+ $(OBJ_DIR)/swim_global_data_mod.o \
+ $(OBJ_DIR)/profile_mod.o \
+ $(OBJ_DIR)/vmec_setup.o \
+ $(OBJ_DIR)/qlsum.o \
+ $(OBJ_DIR)/ql_myra.o \
+ $(OBJ_DIR)/mets2aorsa.o \
+ $(OBJ_DIR)/cauchy_ppart.o \
+ $(OBJ_DIR)/vlog.o \
+ $(OBJ_DIR)/aorsa3dMain.o \
+ $(OBJ_DIR)/aorsaSubs.o \
+ $(OBJ_DIR)/sigma.o \
+ $(OBJ_DIR)/zfunction.o \
+ $(OBJ_DIR)/ztable.o \
+ $(OBJ_DIR)/current.o \
+ $(OBJ_DIR)/fourier.o \
+ $(OBJ_DIR)/assert.o \
+ $(OBJ_DIR)/setupblacs.o \
+ $(OBJ_DIR)/bessel.o \
+ $(OBJ_DIR)/check.o
 
-INCFILES = $(SOURCE_DIR)/kron3_mod.f
+INC_FILES = $(SRC_DIR)/kron3_mod.f
 
-COMMON_OPTION  = -Msave -I $(INCLUDE_DIR)
-COMMON_OPTION2  = -Mnosave -I $(INCLUDE_DIR)
+COMMON_OPTION  = -Msave -Mr8 -r8 -I $(INCLUDE_DIR)
+COMMON_OPTION2  = -Mnosave -Mr8 -r8 -I $(INCLUDE_DIR)
 
-F77 = ftn -fast -tp barcelona-64 -fastsse -Mr8 -r8 $(COMMON_OPTION)
+F77 = ftn -c -R abcps $(COMMON_OPTION)
+F90 = ftn -c -Mfree $(COMMON_OPTION)
+F90_LOAD = ftn $(COMMON_OPTION)
 
-F90 = ftn -fast -tp barcelona-64 -fastsse -Mfree -Mr8 -r8 $(COMMON_OPTION)
-
-OPTIMIZATION = 
-
-OPTIMIZATION4 = $(OPTIMIZATION)
-OPTIMIZATIONg =  
-
-F77FLAGS= -c $(OPTIMIZATION)  -I $(INCLUDE_DIR) 
-F77FLAGSg= -c  -R abcps $(OPTIMIZATIONg) -I $(INCLUDE_DIR)
-F77FLAGS4= -c $(OPTIMIZATION4) -I $(INCLUDE_DIR)
+OPTIMIZATION = -fast -tp barcelona-64 -fastsse
+F77FLAGS= $(OPTIMIZATION) -I $(INCLUDE_DIR) 
 
 COMPILE = $(F77) $(F77FLAGS)
 COMPILE90 = $(F90) $(F77FLAGS) $(INLINE)
-COMPILEg = $(F77) $(F77FLAGSg)
-COMPILE4 = $(F77) $(F77FLAGS4)
 
-#FFT_LIB = /global/homes/j/jaegeref/AORSA2D/libdfftpack_pgf90.a
 LOADFLAGS = 
-LIBS = \
-#  $(FFT_LIB) \
- -L/global/homes/j/jaegeref/pgplot/5.2/cnl2.0_pgi7.2.4/lib -lpgplot 
+LIBS = -L/global/homes/j/jaegeref/pgplot/5.2/cnl2.0_pgi7.2.4/lib -lpgplot
 
-PERFORMANCE = -L/ccs/home/larkin/xt3/fpmpi/lib -lfpmpi_papi
-
-LOAD = $(F90) $(OPTIMIZATION) $(LOADFLAGS) 
+LOAD = $(F90_LOAD) $(OPTIMIZATION)
 
 # Compile the program
 
 $(EXEC):          $(OBJFILES)
-	          $(LOAD) -o ./$(EXEC)  $(OBJFILES) $(LIBS)
+	          $(LOAD) -o ./$(EXEC)  $(OBJFILES) $(LIBS) $(LOADFLAGS)
 
 # Dependencies
 
-$(OBJECT_DIR)/qlsum.o:  $(SOURCE_DIR)/qlsum.f $(INCFILES)
-	                        $(COMPILE90) -o $(OBJECT_DIR)/qlsum.o \
-                                $(SOURCE_DIR)/qlsum.f
+$(OBJ_DIR)/mets2aorsa.o:     $(SRC_DIR)/mets2aorsa.f $(INC_FILES)
+	                     $(COMPILE90) -o $(OBJ_DIR)/mets2aorsa.o \
+                             $(SRC_DIR)/mets2aorsa.f
 
-$(OBJECT_DIR)/kron3_mod.o:      $(SOURCE_DIR)/kron3_mod.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/kron3_mod.o \
-                                $(SOURCE_DIR)/kron3_mod.f
+$(OBJ_DIR)/qlsum.o:  $(SRC_DIR)/qlsum.f $(INC_FILES)
+	                        $(COMPILE90) -o $(OBJ_DIR)/qlsum.o \
+                                $(SRC_DIR)/qlsum.f
 
-$(OBJECT_DIR)/aorsa3din_mod.o:  $(SOURCE_DIR)/aorsa3din_mod.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3din_mod.o \
-                                $(SOURCE_DIR)/aorsa3din_mod.f
+$(OBJ_DIR)/cauchy_ppart.o:   $(SRC_DIR)/cauchy_ppart.f $(INC_FILES)
+	                     $(COMPILE90) -o $(OBJ_DIR)/cauchy_ppart.o \
+                             $(SRC_DIR)/cauchy_ppart.f	
 
-$(OBJECT_DIR)/swim_global_data_mod.o:  $(SOURCE_DIR)/swim_global_data_mod.f $(INCFILES)
-	                        $(COMPILE90) -o $(OBJECT_DIR)/swim_global_data_mod.o \
-                                $(SOURCE_DIR)/swim_global_data_mod.f
+$(OBJ_DIR)/vlog.o:           $(SRC_DIR)/vlog.f $(INC_FILES)
+		             $(COMPILE) -o $(OBJ_DIR)/vlog.o \
+			     $(SRC_DIR)/vlog.f
 
-$(OBJECT_DIR)/profile_mod.o:    $(SOURCE_DIR)/profile_mod.f $(INCFILES)
-	                        $(COMPILE90) -o $(OBJECT_DIR)/profile_mod.o \
-                                $(SOURCE_DIR)/profile_mod.f
+$(OBJ_DIR)/kron3_mod.o:      $(SRC_DIR)/kron3_mod.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/kron3_mod.o \
+                                $(SRC_DIR)/kron3_mod.f
 
-$(OBJECT_DIR)/vmec_setup.o:     $(SOURCE_DIR)/vmec_setup.f $(INCFILES)
-	                        $(COMPILE) -o $(OBJECT_DIR)/vmec_setup.o \
-                                $(SOURCE_DIR)/vmec_setup.f
+$(OBJ_DIR)/aorsa3din_mod.o:  $(SRC_DIR)/aorsa3din_mod.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/aorsa3din_mod.o \
+                                $(SRC_DIR)/aorsa3din_mod.f
 
-$(OBJECT_DIR)/aorsa3dMain.o:    $(SOURCE_DIR)/aorsa3dMain.F $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsa3dMain.o \
-                                $(SOURCE_DIR)/aorsa3dMain.F
+$(OBJ_DIR)/swim_global_data_mod.o:  $(SRC_DIR)/swim_global_data_mod.f $(INC_FILES)
+	                        $(COMPILE90) -o $(OBJ_DIR)/swim_global_data_mod.o \
+                                $(SRC_DIR)/swim_global_data_mod.f
 
-$(OBJECT_DIR)/aorsaSubs.o:      $(SOURCE_DIR)/aorsaSubs.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/aorsaSubs.o \
-                                $(SOURCE_DIR)/aorsaSubs.f
+$(OBJ_DIR)/profile_mod.o:    $(SRC_DIR)/profile_mod.f $(INC_FILES)
+	                        $(COMPILE90) -o $(OBJ_DIR)/profile_mod.o \
+                                $(SRC_DIR)/profile_mod.f
 
-$(OBJECT_DIR)/sigma.o:          $(SOURCE_DIR)/sigma.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/sigma.o \
-                                $(SOURCE_DIR)/sigma.f
+$(OBJ_DIR)/vmec_setup.o:     $(SRC_DIR)/vmec_setup.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/vmec_setup.o \
+                                $(SRC_DIR)/vmec_setup.f
+
+$(OBJ_DIR)/aorsa3dMain.o:    $(SRC_DIR)/aorsa3dMain.F $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/aorsa3dMain.o \
+                                $(SRC_DIR)/aorsa3dMain.F
+
+$(OBJ_DIR)/aorsaSubs.o:      $(SRC_DIR)/aorsaSubs.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/aorsaSubs.o \
+                                $(SRC_DIR)/aorsaSubs.f
+
+$(OBJ_DIR)/sigma.o:          $(SRC_DIR)/sigma.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/sigma.o \
+                                $(SRC_DIR)/sigma.f
                                 
-$(OBJECT_DIR)/zfunction.o:      $(SOURCE_DIR)/zfunction.f $(INCFILES)
-	                        $(COMPILE) -o $(OBJECT_DIR)/zfunction.o \
-                                $(SOURCE_DIR)/zfunction.f
+$(OBJ_DIR)/zfunction.o:      $(SRC_DIR)/zfunction.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/zfunction.o \
+                                $(SRC_DIR)/zfunction.f
 
-$(OBJECT_DIR)/ztable.o:         $(SOURCE_DIR)/ztable.f $(INCFILES)
-	                        $(COMPILE90) -o $(OBJECT_DIR)/ztable.o \
-                                $(SOURCE_DIR)/ztable.f
+$(OBJ_DIR)/ztable.o:         $(SRC_DIR)/ztable.f $(INC_FILES)
+	                        $(COMPILE90) -o $(OBJ_DIR)/ztable.o \
+                                $(SRC_DIR)/ztable.f
                                 
-$(OBJECT_DIR)/bessel.o:         $(SOURCE_DIR)/bessel.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/bessel.o \
-                                $(SOURCE_DIR)/bessel.f
+$(OBJ_DIR)/bessel.o:         $(SRC_DIR)/bessel.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/bessel.o \
+                                $(SRC_DIR)/bessel.f
 
-$(OBJECT_DIR)/current.o:        $(SOURCE_DIR)/current.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/current.o \
-                                $(SOURCE_DIR)/current.f
+$(OBJ_DIR)/current.o:        $(SRC_DIR)/current.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/current.o \
+                                $(SRC_DIR)/current.f
 
-$(OBJECT_DIR)/ql_myra.o:        $(SOURCE_DIR)/ql_myra.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/ql_myra.o \
-                                $(SOURCE_DIR)/ql_myra.f
+$(OBJ_DIR)/ql_myra.o:        $(SRC_DIR)/ql_myra.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/ql_myra.o \
+                                $(SRC_DIR)/ql_myra.f
                                 
-$(OBJECT_DIR)/fourier.o:        $(SOURCE_DIR)/fourier.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/fourier.o \
-                                $(SOURCE_DIR)/fourier.f
+$(OBJ_DIR)/fourier.o:        $(SRC_DIR)/fourier.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/fourier.o \
+                                $(SRC_DIR)/fourier.f
                                 
-$(OBJECT_DIR)/assert.o:         $(SOURCE_DIR)/assert.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/assert.o \
-                                $(SOURCE_DIR)/assert.f
+$(OBJ_DIR)/assert.o:         $(SRC_DIR)/assert.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/assert.o \
+                                $(SRC_DIR)/assert.f
                                 
-$(OBJECT_DIR)/descinit.o:       $(SOURCE_DIR)/descinit.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/descinit.o \
-                                $(SOURCE_DIR)/descinit.f
-                                                                                                
-$(OBJECT_DIR)/infog2l.o:        $(SOURCE_DIR)/infog2l.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/infog2l.o \
-                                $(SOURCE_DIR)/infog2l.f
+$(OBJ_DIR)/descinit.o:       $(SRC_DIR)/descinit.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/descinit.o \
+                                $(SRC_DIR)/descinit.f
                                 
-$(OBJECT_DIR)/pxerbla.o:        $(SOURCE_DIR)/pxerbla.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/pxerbla.o \
-                                $(SOURCE_DIR)/pxerbla.f
+$(OBJ_DIR)/infog2l.o:        $(SRC_DIR)/infog2l.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/infog2l.o \
+                                $(SRC_DIR)/infog2l.f
                                 
-$(OBJECT_DIR)/setupblacs.o:     $(SOURCE_DIR)/setupblacs.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/setupblacs.o \
-                                $(SOURCE_DIR)/setupblacs.f                                                                                                
+$(OBJ_DIR)/pxerbla.o:        $(SRC_DIR)/pxerbla.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/pxerbla.o \
+                                $(SRC_DIR)/pxerbla.f
+                                
+$(OBJ_DIR)/setupblacs.o:     $(SRC_DIR)/setupblacs.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/setupblacs.o \
+                                $(SRC_DIR)/setupblacs.f
 
-$(OBJECT_DIR)/check.o:          $(SOURCE_DIR)/check.f $(INCFILES)
-	                        $(COMPILEg) -o $(OBJECT_DIR)/check.o \
-                                $(SOURCE_DIR)/check.f
+$(OBJ_DIR)/check.o:          $(SRC_DIR)/check.f $(INC_FILES)
+	                        $(COMPILE) -o $(OBJ_DIR)/check.o \
+                                $(SRC_DIR)/check.f
+
+$(OBJ_DIR)/cauchy_mod.o:    $(SRC_DIR)/cauchy_mod.f $(INC_FILES)
+	                     $(COMPILE) -o $(OBJ_DIR)/cauchy_mod.o \
+                             $(SRC_DIR)/cauchy_mod.f			     
+
 
 make clean:
 	rm -f *.o *.lst *.mod $(EXEC)
-	rm $(OBJECT_DIR)/*.o
+	rm $(OBJ_DIR)/*.o

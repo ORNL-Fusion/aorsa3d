@@ -20,6 +20,9 @@
 
       integer n_upper, n_lower, m_upper, m_lower, l_upper, l_lower
 
+      integer i0, j0, k0
+      real rhomin
+
       integer iflag
       integer imcap
       integer nxmx, nymx, nphimx, ieq, jcol
@@ -132,7 +135,8 @@ c***  3-D arrays:
       complex, dimension(:,:,:), allocatable :: xjx, xjy, xjz
 
       real, dimension(:,:,:), allocatable :: psi, thetap, rho, xkte,
-     .     xkti, xnea, xn1a, xn2a, xn3a, omgce, omgci1, omgci2, omgci3,
+     .     xkti, xkti2, xkti3, xnea, xn1a, xn2a, xn3a,
+     .     omgce, omgci1, omgci2, omgci3,
      .     omgpe2, omgp12, omgp22, omgp32, bmod, bmod_mid
 
       complex, dimension(:,:,:), allocatable :: xjpxe, xjpye, xjpze,
@@ -246,7 +250,7 @@ c***  3-D arrays:
       real xkthrho, wphase, vsound, domgk, xkthdx, omgestar, rhoi10,
      .   v0i, vthi10, vthe, vthi, vphase, rhoi1overl, rnz, xn2, eta2,
      .   xk0, shearedge, eta1, xn1, xmi1, xmh, xme, qi1, xmi2,
-     .   xmi3, t0i, t0e, q, teedge, clight, xmu0, xlnlam,
+     .   xmi3, t0i, t0i2, t0i3, t0e, q, teedge, clight, xmu0, xlnlam,
      .   omgci10, omgrf, xmax, qe,i3, qi2, pi, eps0, xn3, qi3,
      .   costh, sinth, radius, rnx,  rny, rnphi
 
@@ -260,7 +264,11 @@ c***  3-D arrays:
       real rhon(nrhomax), drho, wdoti1avg(nrhomax), wdoti2avg(nrhomax),
      .     wdoti3avg(nrhomax), wdoteavg(nrhomax), wdotavg(nrhomax),
      .     darea(nrhomax)
-      real xnavg(nrhomax), qhat, omgte, omgti,
+      real xnavg(nrhomax), xn1avg(nrhomax), xn2avg(nrhomax),
+     .     xn3avg(nrhomax)
+      real xkteavg(nrhomax), xktiavg(nrhomax), xkti2avg(nrhomax),
+     .     xkti3avg(nrhomax)
+      real qhat, omgte, omgti,
      .     vthe0, vthi0, xnuee, xnuii, xnu7omg
       real dldbavg(nrhomax)
       real redotjeavg(nrhomax), redotj1avg(nrhomax),
@@ -497,6 +505,8 @@ c        integer, dimension(:,:,:), allocatable :: mask2
      .     rho(nxmx, nymx, nphimx),
      .     xkte(nxmx, nymx, nphimx),
      .     xkti(nxmx, nymx, nphimx),
+     .     xkti2(nxmx, nymx, nphimx),
+     .     xkti3(nxmx, nymx, nphimx),
      .     xnea(nxmx, nymx, nphimx),
      .     xn1a(nxmx, nymx, nphimx),
      .     xn2a(nxmx, nymx, nphimx),
@@ -808,6 +818,8 @@ c     .        form='formatted')
 
       t0e = te0
       t0i = ti0
+      t0i2 = ti02
+      t0i3 = ti03
 
       teedge = 400.0
 
@@ -815,6 +827,8 @@ c     .        form='formatted')
 
       t0e = t0e * q
       t0i = t0i * q
+      t0i2 = t0i2 * q
+      t0i3 = t0i3 * q
 
       teedge = teedge * q
 
@@ -1023,6 +1037,8 @@ c         write(15, 7017)rhoi10
 
       telimj   = telim  * q
       tilimj   = tilim  * q
+      ti2limj  = ti2lim * q
+      ti3limj  = ti3lim * q
 
       t1 = second1(dummy)
 
@@ -1281,8 +1297,8 @@ c         write(15, 7017)rhoi10
                do m = 1, NUPAR
                   do l = 1, n_psi
                      dfe_cql_uprp(n, m, l)
-     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
-     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * uperp(n))
+     .                   = fe_cql_cart(n, m, l)
+     .                   * (3.0**2) * (-2.0 * uperp(n))
                   end do
                end do
             end do
@@ -1290,8 +1306,8 @@ c         write(15, 7017)rhoi10
                do m = 1, NUPAR
                   do l = 1, n_psi
                      dfe_cql_uprl(n, m, l)
-     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
-     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * upara(n))
+     .                   = fe_cql_cart(n, m, l)
+     .                   * (3.0**2) * (-2.0 * upara(m))
                   end do
                end do
             end do
@@ -1331,8 +1347,8 @@ c         write(15, 7017)rhoi10
                do m = 1, NUPAR
                   do l = 1, n_psi
                      df1_cql_uprp(n, m, l)
-     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
-     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * uperp(n))
+     .                   = f1_cql_cart(n, m, l)
+     .                   * (3.0**2) * (-2.0 * uperp(n))
                   end do
                end do
             end do
@@ -1340,8 +1356,8 @@ c         write(15, 7017)rhoi10
                do m = 1, NUPAR
                   do l = 1, n_psi
                      df1_cql_uprl(n, m, l)
-     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
-     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * upara(n))
+     .                   = f1_cql_cart(n, m, l)
+     .                   * (3.0**2) * (-2.0 * upara(m))
                   end do
                end do
             end do
@@ -1353,7 +1369,7 @@ c         write(15, 7017)rhoi10
          if (ndisti2 .eq. 1) then
 
             n_psi = nnoderho
-            vc1_mks = 3.0 * sqrt(2.0 * ti0 * q / xmi2)
+            vc2_mks = 3.0 * sqrt(2.0 * ti02 * q / xmi2)
             UminPara = -1.0
             UmaxPara = 1.0
 
@@ -1381,8 +1397,8 @@ c         write(15, 7017)rhoi10
                do m = 1, NUPAR
                   do l = 1, n_psi
                      df2_cql_uprp(n, m, l)
-     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
-     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * uperp(n))
+     .                   = f2_cql_cart(n, m, l)
+     .                   * (3.0**2) * (-2.0 * uperp(n))
                   end do
                end do
             end do
@@ -1390,8 +1406,8 @@ c         write(15, 7017)rhoi10
                do m = 1, NUPAR
                   do l = 1, n_psi
                      df2_cql_uprl(n, m, l)
-     .                   = exp(-(uperp(n)**2 + upara(m)**2) * (3.0**2))
-     .                   * (3.0**5) / (sqrt(pi)**3) * (-2.0 * upara(n))
+     .                   = f2_cql_cart(n, m, l)
+     .                   * (3.0**2) * (-2.0 * upara(m))
                   end do
                end do
             end do
@@ -1979,15 +1995,30 @@ c     .               / rhonorm
 
       end if
 
+      rhomin = 1.0
+      k0 = nnodephi / 2
+      do i = 1, nnodex
+         do j = 1, nnodey
+            if (rho(i,j,k0) .lt. rhomin) then
+               i0 = i
+               j0 = j
+               rhomin = rho(i,j,k0)
+            end if
+         end do
+      end do
+
 *     -----------------------
-*     Calculate bmod_mid(i,j)
+*     Calculate bmod_mid(i,j,k)
 *     -----------------------
-!      do i = 1, nnodex
-!         do j = 1, nnodey
+      do i = 1, nnodex
+         do j = 1, nnodey
+            do k = 1, nnodephi
+               bmod_mid(i,j,k) = bmod(i,j,k)
 !            call midplane(i, j, bmod, bmod_mid(i,j), rho,
 !     .                nxmx, nymx, nnodex, nnodey, capr, rt, b0, jmid)
-!	   end do
-!      end do
+            end do
+         end do
+      end do
 
 
 *     ------------------------------
@@ -2094,6 +2125,10 @@ c        allocate( mask2(1:nnodex,1:nnodey,1:nnodephi) )
      .                 + (t0e - telimj) * gaussian**alphate
                   xkti(i,j,k) = tilimj
      .                 + (t0i - tilimj) * gaussian**alphati
+                  xkti2(i,j,k) = ti2limj
+     .                 + (t0i2 - ti2limj) * gaussian**alphati2
+                  xkti3(i,j,k) = ti3limj
+     .                 + (t0i3 - ti3limj) * gaussian**alphati3
                else if (iprofile .eq. 3) then
                   if (psi(i,j,k) .lt. psiplasm) then
                      xnea(i,j,k) = (psi(i,j,k) / psiplasm)**betan
@@ -2106,10 +2141,20 @@ c        allocate( mask2(1:nnodex,1:nnodey,1:nnodephi) )
                      xkti(i,j,k) = (psi(i,j,k) / psiplasm)**betati
                      xkti(i,j,k) = (1.0 - xkti(i,j,k))**alphati
                      xkti(i,j,k) = tilimj + (t0i - tilimj) * xkti(i,j,k)
+                     xkti2(i,j,k) = (psi(i,j,k) / psiplasm)**betati2
+                     xkti2(i,j,k) = (1.0 - xkti2(i,j,k))**alphati2
+                     xkti2(i,j,k) = ti2limj
+     .                    + (t0i2 - ti2limj) * xkti2(i,j,k)
+                     xkti3(i,j,k) = (psi(i,j,k) / psiplasm)**betati3
+                     xkti3(i,j,k) = (1.0 - xkti3(i,j,k))**alphati3
+                     xkti3(i,j,k) = ti3limj
+     .                    + (t0i3 - ti3limj) * xkti3(i,j,k)
                   else
                      xnea(i,j,k) = xnlim
                      xkte(i,j,k) = telimj
                      xkti(i,j,k) = tilimj
+                     xkti2(i,j,k) = ti2limj
+                     xkti3(i,j,k) = ti3limj
                   end if
                end if
 
@@ -2140,53 +2185,151 @@ c        allocate( mask2(1:nnodex,1:nnodey,1:nnodephi) )
 
 	 s_t_s = q * s_t_s * 1.0e3    !input is kev TEMPS IN JOULES
 
+         xnea = 1.0e-10
          call flux_to_rzphi(nnodex,nnodey,nnodephi,s_n_s(1:s_nrho_n,0),
      .        xnea(1:nnodex,1:nnodey,1:nnodephi),
      .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
      .        rho(1:nnodex,1:nnodey,1:nnodephi))
 
+         xkte = 1.0e-10 * q
          call flux_to_rzphi(nnodex,nnodey,nnodephi,s_t_s(1:s_nrho_n,0),
      .        xkte(1:nnodex,1:nnodey,1:nnodephi),
      .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
      .        rho(1:nnodex,1:nnodey,1:nnodephi))
 
+         xn1a = 1.0e-10
          call flux_to_rzphi(nnodex,nnodey,nnodephi,s_n_s(1:s_nrho_n,1),
      .        xn1a(1:nnodex,1:nnodey,1:nnodephi),
      .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
      .        rho(1:nnodex,1:nnodey,1:nnodephi))
 
+         xkti = 1.0e-10 * q
          call flux_to_rzphi(nnodex,nnodey,nnodephi,s_t_s(1:s_nrho_n,1),
      .        xkti(1:nnodex,1:nnodey,1:nnodephi),
      .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
      .        rho(1:nnodex,1:nnodey,1:nnodephi))
 
+         xn2a = 1.0e-10
          call flux_to_rzphi(nnodex,nnodey,nnodephi,s_n_s(1:s_nrho_n,2),
      .        xn2a(1:nnodex,1:nnodey,1:nnodephi),
      .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
      .        rho(1:nnodex,1:nnodey,1:nnodephi))
 
+         xkti2 = 1.0e-10 * q
+         call flux_to_rzphi(nnodex,nnodey,nnodephi,s_t_s(1:s_nrho_n,2),
+     .        xkti2(1:nnodex,1:nnodey,1:nnodephi),
+     .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
+     .        rho(1:nnodex,1:nnodey,1:nnodephi))
+
+         xn3a = 1.0e-10
          call flux_to_rzphi(nnodex,nnodey,nnodephi,s_n_s(1:s_nrho_n,3),
      .        xn3a(1:nnodex,1:nnodey,1:nnodephi),
      .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
      .        rho(1:nnodex,1:nnodey,1:nnodephi))
 
-         do i = 1, nnodex
-            do j = 1, nnodey
-               do k = 1, nnodephi
-                  if (psi(i,j,k) .gt. psilim) then
-                     xnea(i,j,k) = 1.0e-10
-                     xn1a(i,j,k) = 1.0e-10
-                     xn2a(i,j,k) = 1.0e-10
-                     xn3a(i,j,k) = 1.0e-10
-                     xkte(i,j,k) = 1.0e-10 * q
-                     xkti(i,j,k) = 1.0e-10 * q
-                  end if
+         xkti3 = 1.0e-10 * q
+         call flux_to_rzphi(nnodex,nnodey,nnodephi,s_t_s(1:s_nrho_n,3),
+     .        xkti3(1:nnodex,1:nnodey,1:nnodephi),
+     .        s_rho_n_grid(1:s_nrho_n),s_nrho_n,
+     .        rho(1:nnodex,1:nnodey,1:nnodephi))
+
+
+*        ---------------------------------
+*        Minority ion (species 2) profiles:
+*        ---------------------------------
+*        for now leave the species 2 minority option open
+*        if eta comes in as zero or small, use namelist values
+*        else create a minority
+
+         if(eta .ge. 1.0e-6) then
+            do i = 1, nnodex
+               do j = 1, nnodey
+                  do k = 1, nnodephi
+                     xn2a(i,j,k) = eta * xnea(i,j,k)
+	    
+*                 ----------------
+*                 Cold minority H:
+*                 ----------------
+*                  xkti2(i,j) = xkti(i,j)
+
+*                 ----------------
+*                 Hot minority H:
+*                 ----------------
+c                 xkti2(i,j) = xkti3(i,j) 
+	    
+                  end do
                end do
             end do
-         end do
+	 end if
+
+*        --------------------------------------------------
+*        Adjust ni1a for charge neutrality on all processors:
+*        --------------------------------------------------	     	    
+	 do i = 1, nnodex
+            do j = 1, nnodey     
+               do k = 1, nnodephi
+                  xn1a(i, j, k) = (xnea(i, j, k) - z2 * xn2a(i, j, k)
+     .                                  - z3 * xn3a(i, j, k)   ) / z1
+     
+               if (xn1a(i, j, k) .le. 0.0) xn1a(i, j, k) = 1.0e-10
+               end do
+            end do
+         end do	    
+	    	 
+	 
+
+         xn0 = xnea(i0, j0, k0)
+         xn1 = xn1a(i0, j0, k0)
+         xn2 = xn2a(i0, j0, k0)
+         xn3 = xn3a(i0, j0, k0)
+         eta1 = xn1 / xn0
+         eta2 = xn2 / xn0
+         eta3 = xn3 / xn0
+	 
+	 if(myid .eq. 0)then
+            write(6, 6834)eta1
+            write(6, 6835)eta2
+            write(6, 6836)eta3
+	    
+            write(15, 6834)eta1
+            write(15, 6835)eta2
+            write(15, 6836)eta3	    
+	 end if
       end if
 
+*     ------------------------
+*     Do flux surface averages:
+*     ------------------------
+
       call fluxavg(xnea, xnavg, rho, nxmx, nymx, nphimx, nrhomax,
+     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
+     .   fvol, vol)
+
+      call fluxavg(xn1a, xn1avg, rho, nxmx, nymx, nphimx, nrhomax,
+     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
+     .   fvol, vol)
+
+      call fluxavg(xn2a, xn2avg, rho, nxmx, nymx, nphimx, nrhomax,
+     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
+     .   fvol, vol)
+
+      call fluxavg(xn3a, xn3avg, rho, nxmx, nymx, nphimx, nrhomax,
+     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
+     .   fvol, vol)
+
+      call fluxavg(xkte, xkteavg, rho, nxmx, nymx, nphimx, nrhomax,
+     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
+     .   fvol, vol)
+
+      call fluxavg(xkti, xktiavg, rho, nxmx, nymx, nphimx, nrhomax,
+     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
+     .   fvol, vol)
+
+      call fluxavg(xkti2, xkti2avg, rho, nxmx, nymx, nphimx, nrhomax,
+     .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
+     .   fvol, vol)
+
+      call fluxavg(xkti3, xkti3avg, rho, nxmx, nymx, nphimx, nrhomax,
      .   nnodex, nnodey, nnodephi, nnoderho, drho, dx, dy, dphi, capr,
      .   fvol, vol)
 
@@ -3071,7 +3214,7 @@ c        enddo
 
                         if (isigma .eq. 1)then
 
-                           call sigmad_cql3d(i, j, n, m,
+                           call sigmad_cql3d(i, j, k, n, m,
      .                        rho(i, j, k), rho_a,
      .                        gradprlb(i, j, k), bmod(i, j, k),
      .                        bmod_mid(i, j, k),
@@ -3093,12 +3236,12 @@ c        enddo
      .                        vce_mks, dfe_cql_uprp, dfe_cql_uprl,
      .                        nbessj, nkperp, zi, eps0, v0i, omgrf,
      .                        xk0, kperp_max,
-     .                        i_sav, j_sav, 1, damping,
+     .                        i_sav, j_sav, k_sav, 1, damping,
      .                        xkx_cutoff, xky_cutoff, xkz_cutoff,
      .                        rt, nkx2, nky2)
 
 
-                           call sigmad_cql3d(i, j, n, m,
+                           call sigmad_cql3d(i, j, k, n, m,
      .                        rho(i, j, k), rho_a,
      .                        gradprlb(i, j, k), bmod(i, j, k),
      .                        bmod_mid(i, j, k),
@@ -3120,18 +3263,18 @@ c        enddo
      .                        vc1_mks, df1_cql_uprp, df1_cql_uprl,
      .                        nbessj, nkperp, zi, eps0, v0i, omgrf,
      .                        xk0, kperp_max,
-     .                        i_sav, j_sav, 1, damping,
+     .                        i_sav, j_sav, k_sav, 1, damping,
      .                        xkx_cutoff, xky_cutoff, xkz_cutoff,
      .                        rt, nkx2, nky2)
 
 
                            if(eta2 .ne. 0.0)
-     .                        call sigmad_cql3d(i, j, n, m,
+     .                        call sigmad_cql3d(i, j, k, n, m,
      .                        rho(i, j, k), rho_a,
      .                        gradprlb(i, j, k), bmod(i, j, k),
      .                        bmod_mid(i, j, k),
      .                        xmi2, qi2, xn2a(i, j, k), xnuomg,
-     .                        xkti(i,j,k), omgci2(i,j,k), omgp22(i,j,k),
+     .                        xkti2(i,j,k), omgci2(i,j,k),omgp22(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -3148,18 +3291,18 @@ c        enddo
      .                        vc2_mks, df2_cql_uprp, df2_cql_uprl,
      .                        nbessj, nkperp, zi, eps0, v0i, omgrf,
      .                        xk0, kperp_max,
-     .                        i_sav, j_sav, 1, damping,
+     .                        i_sav, j_sav, k_sav, 1, damping,
      .                        xkx_cutoff, xky_cutoff, xkz_cutoff,
      .                        rt, nkx2, nky2)
 
 
                            if(eta3 .ne. 0.0)
-     .                        call sigmad_cql3d(i, j, n, m,
+     .                        call sigmad_cql3d(i, j, k, n, m,
      .                        rho(i, j, k), rho_a,
      .                        gradprlb(i, j, k), bmod(i, j, k),
      .                        bmod_mid(i, j, k),
      .                        xmi3, qi3, xn3a(i, j, k), xnuomg,
-     .                        xkti(i,j,k), omgci3(i,j,k), omgp32(i,j,k),
+     .                        xkti3(i,j,k), omgci3(i,j,k),omgp32(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -3176,7 +3319,7 @@ c        enddo
      .                        vc3_mks, df3_cql_uprp, df3_cql_uprl,
      .                        nbessj, nkperp, zi, eps0, v0i, omgrf,
      .                        xk0, kperp_max,
-     .                        i_sav, j_sav, 1, damping,
+     .                        i_sav, j_sav, k_sav, 1, damping,
      .                        xkx_cutoff, xky_cutoff, xkz_cutoff,
      .                        rt, nkx2, nky2)
 
@@ -3216,7 +3359,7 @@ c        enddo
                            if(eta2 .ne. 0.0)
      .                        call sigmac_stix(i, j, n, m,
      .                        xmi2, qi2, xn2a(i, j, k), xnuomg,
-     .                        xkti(i,j,k), omgci2(i,j,k), omgp22(i,j,k),
+     .                        xkti2(i,j,k), omgci2(i,j,k),omgp22(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -3231,7 +3374,7 @@ c        enddo
                            if(eta3 .ne. 0.0)
      .                        call sigmac_stix(i, j, n, m,
      .                        xmi3, qi3, xn3a(i, j, k), xnuomg,
-     .                        xkti(i,j,k), omgci3(i,j,k), omgp32(i,j,k),
+     .                        xkti3(i,j,k), omgci3(i,j,k),omgp32(i,j,k),
      .                        -lmax, lmax, nzfun, ibessel,
      .                        xkxsav(n), xkysav(m), xkzsav(nphi),
      .                        capr(i),
@@ -4144,7 +4287,7 @@ c
      .      nnodex, nnodey, nnodephi,
      .      nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .      nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
-     .      xmi2, qi2, xn2a, xkti, omgci2, omgp22, lmax,
+     .      xmi2, qi2, xn2a, xkti2, omgci2, omgp22, lmax,
      .      xkxsav, xkysav, xkzsav, nzfun, ibessel,
      .      ealphak, ebetak, ebk, capr,
      .      bxn, byn, bzn,
@@ -4162,7 +4305,7 @@ c
      .      nnodex, nnodey, nnodephi,
      .      nkx1, nkx2, nky1, nky2, nphi1, nphi2,
      .      nkdim1, nkdim2, mkdim1, mkdim2, lkdim1, lkdim2,
-     .      xmi3, qi3, xn3a, xkti, omgci3, omgp32, lmax,
+     .      xmi3, qi3, xn3a, xkti3, omgci3, omgp32, lmax,
      .      xkxsav, xkysav, xkzsav, nzfun, ibessel,
      .      ealphak, ebetak, ebk, capr,
      .      bxn, byn, bzn,
@@ -4205,6 +4348,15 @@ c
       t1 = second1(dummy)
 
       if (nzeta_wdot .gt. 0) then
+        if (myid .eq. 0 .and. i_write .ne. 0) then
+           open(unit=43,file='out_orbitrf.coef',  status='replace',
+     .                                             form='formatted')
+           write(43,309) nnodex, nnodey, nnodephi
+           write(43,310) (capr(i), i = 1, nnodex)
+           write(43,310) (y(j), j = 1, nnodey)
+           write(43,310) (phi(k), k = 1, nnodephi)
+           close(43)
+        end if
 
       ! ------------------ !
       ! --  Electrons   -- !
@@ -4224,7 +4376,7 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim, nboundary,
-     .   myid, nproc, delta0, gradprlb, bmod, ndiste,
+     .   myid, nproc, delta0, gradprlb, bmod, ndiste, bmod_mid,
      .   nupar, nuper, n_psi,
      .   n_psi_dim, dfdupere, dfdupare,
      .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
@@ -4254,7 +4406,7 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim, nboundary,
-     .   myid, nproc, delta0, gradprlb, bmod, ndisti1,
+     .   myid, nproc, delta0, gradprlb, bmod, ndisti1, bmod_mid,
      .   nupar, nuper, n_psi,
      .   n_psi_dim, dfduper1, dfdupar1,
      .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
@@ -4274,7 +4426,7 @@ c
      .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
-     .   xmi2, qi2, xn2a, xkti, omgci2, omgp22, lmax,
+     .   xmi2, qi2, xn2a, xkti2, omgci2, omgp22, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
      .   ealphak, ebetak, ebk, capr,
      .   bxn, byn, bzn,
@@ -4283,7 +4435,7 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim, nboundary,
-     .   myid, nproc, delta0, gradprlb, bmod, ndisti2,
+     .   myid, nproc, delta0, gradprlb, bmod, ndisti2, bmod_mid,
      .   nupar, nuper, n_psi,
      .   n_psi_dim, dfduper2, dfdupar2,
      .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
@@ -4304,7 +4456,7 @@ c
      .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
-     .   xmi3, qi3, xn3a, xkti, omgci3, omgp32, lmax,
+     .   xmi3, qi3, xn3a, xkti3, omgci3, omgp32, lmax,
      .   xkxsav, xkysav, xkzsav, nzfun, ibessel,
      .   ealphak, ebetak, ebk, capr,
      .   bxn, byn, bzn,
@@ -4313,7 +4465,7 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim, nboundary,
-     .   myid, nproc, delta0, gradprlb, bmod, ndisti3,
+     .   myid, nproc, delta0, gradprlb, bmod, ndisti3, bmod_mid,
      .   nupar, nuper, n_psi,
      .   n_psi_dim, dfduper3, dfdupar3,
      .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
@@ -5471,7 +5623,8 @@ c         close(29)
 
       deallocate( xjx, xjy, xjz )
 
-      deallocate( psi, thetap, rho, xkte, xkti, xnea, xn1a, xn2a, xn3a,
+      deallocate( psi, thetap, rho, xkte, xkti, xkti2, xkti3,
+     .     xnea, xn1a, xn2a, xn3a,
      .     omgce, omgci1, omgci2, omgci3, omgpe2, omgp12, omgp22,omgp32,
      .     bmod, bmod_mid)
 

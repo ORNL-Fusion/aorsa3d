@@ -22,7 +22,7 @@ c
      .   uzx, uzy, uzz,
      .   myrow, mycol, nprow, npcol, icontxt, desc_amat, dlen_,
      .   xx, yy, zz, isigma, xnuomg, signb, psi, psilim, nboundary,
-     .   myid, nproc, delta0, gradprlb, bmod, ndist,
+     .   myid, nproc, delta0, gradprlb, bmod, ndist, bmod_mid,
      .   nupar, nuper, n_psi,
      .   n_psi_dim, dfduper, dfdupar,
      .   UminPara_cql, UmaxPara_cql, UPERP_cql, UPARA_cql, UPERP, UPARA,
@@ -87,7 +87,7 @@ c
      .   omgrf, c_ehst, akprl, xkprl, xkphi,
      .   a, rmaxa, rmina,
      .   wphase, xlnlam, vth
-      real x(nxdim), y(nydim), argd, drho!, bratio
+      real x(nxdim), y(nydim), argd, drho, bratio
 
 
       real xm, omgc(nxdim, nydim, nphidim),
@@ -198,6 +198,7 @@ c
       real :: df_cql_uprl(NUPER, NUPAR, n_psi_dim)
       real :: vc_mks, vc_mks_cql, rho_a(n_psi_dim)
       real :: eps0, pi, emax, u0, u_0, u_, costh, costh0, psic
+      real, dimension(:,:,:), allocatable :: vc
 
       parameter (eps0 = 8.85e-12)
       parameter (PI = 3.141592653597932384)
@@ -361,11 +362,12 @@ c      factvol2d = 0.0
          finish=start+partition
       endif
       
-      if(ndist.eq.1) then
+      if(i_write.ne.0) then
              allocate(bql_store(start:finish,1:nuper,1:nupar),
      .         cql_store(start:finish,1:nuper,1:nupar),
      .         eql_store(start:finish,1:nuper,1:nupar),
      .         fql_store(start:finish,1:nuper,1:nupar))
+             allocate(vc(nnodex, nnodey, nnodephi))
       else
       endif
 
@@ -393,13 +395,13 @@ c      factvol2d = 0.0
             ASPEC = xm / 1.67e-27
             BMAG = omgc(i,j,k) * (xm / q)
 	       
-!	    bratio = bmod_mid(i,j,k) / bmod(i,j,k)
-!	    if (bratio .gt. 1.0) bratio = 1.0
+	    bratio = bmod_mid(i,j,k) / bmod(i,j,k)
+	    if (bratio .gt. 1.0) bratio = 1.0
 	    
 	    duperp = (uperp(nuper) - uperp(1)) / (nuper - 1)
             dupara = (upara(nupar) - upara(1)) / (nupar - 1)
 	    
-!	    psic = 1.0 / bratio
+	    psic = 1.0 / bratio
 
 !           -----------------------------------------------------
 !           get CQL3D distribution function on the midplane:
@@ -413,11 +415,110 @@ c      factvol2d = 0.0
      .              UPERP, UPARA, DFDUPER, DFDUPAR)
 
             else   !--non-Maxwellian--!
-               call maxwell_dist(u0, NUPAR, NUPER,
-     .              UminPara, UmaxPara,
-     .              UPERP, UPARA, DFDUPER, DFDUPAR)
-               if (myid.eq.0) then
-                  write(*,*) 'non-Maxwellian not implemented'
+	
+               call cql3d_dist(nupar, nuper, n_psi,
+     .              n_psi_dim, rho_a, rho(i,j,k),
+     .              UminPara,UmaxPara,
+     .              df_cql_uprp, df_cql_uprl,
+     .              UPERP, UPARA, DFDUPER0, DFDUPAR0)
+
+!              ---------------------------------------------------------
+!              map CQL3D distribution function off the midplane for Wdot
+!              ---------------------------------------------------------
+               if(bratio .gt. 0.0)then
+	       
+	          dfduper = 0.0
+	          dfdupar = 0.0
+	       	       
+                  do ni = 1, nuper
+                     do mi = 1, nupar
+
+                        argd =  uperp(ni)**2 * (1. - bratio)
+     .     			                         + upara(mi)**2
+                        if (argd .le. 0.0) argd = 1.0e-06
+						
+		        uperp0 = uperp(ni) * sqrt(bratio)
+                        upara0  = sign(1.0, upara(mi)) * sqrt(argd)
+			
+		        dfduper(ni, mi) = 0.0
+                        dfdupar(ni, mi) = 0.0
+				
+		        if(upara0 .ge. upara(1) .and. 
+     .                                   upara0 .le. upara(nupar)) then			
+					
+     		           ni0 = int((uperp0 - uperp(1)) / duperp) + 1
+			   mi0 = int((upara0 - upara(1)) / dupara) + 1
+			   
+			   dfduper0_intplt = dfduper0(ni0, mi0)
+			   dfdupar0_intplt = dfdupar0(ni0, mi0)
+			
+		           if (ni0 .lt. nuper .and. mi0 .lt. nupar) then
+			   
+                           uperp0_grid = uperp(1) + (ni0 - 1) * duperp
+			   upara0_grid = upara(1) + (mi0 - 1) * dupara
+						
+			   zeta = (uperp0 - uperp0_grid) / duperp
+			   eta  = (upara0 - upara0_grid) / dupara
+			
+                           ai = dfduper0(ni0, mi0)
+                           bi = dfduper0(ni0+1,mi0) - dfduper0(ni0,mi0)
+                           ci = dfduper0(ni0,mi0+1) - dfduper0(ni0,mi0)
+                           di = dfduper0(ni0+1,mi0+1)+ dfduper0(ni0,mi0) 
+     .                        - dfduper0(ni0+1,mi0)- dfduper0(ni0,mi0+1) 
+			   
+			   dfduper0_intplt = ai + bi * zeta 
+     .                                     + ci * eta + di * zeta * eta 			
+
+                           ai = dfdupar0(ni0, mi0)
+                           bi = dfdupar0(ni0+1,mi0) - dfdupar0(ni0,mi0)
+                           ci = dfdupar0(ni0,mi0+1) - dfdupar0(ni0,mi0)
+                           di = dfdupar0(ni0+1,mi0+1)+ dfdupar0(ni0,mi0) 
+     .                        - dfdupar0(ni0+1,mi0)- dfdupar0(ni0,mi0+1) 
+			   
+			   dfdupar0_intplt = ai + bi * zeta 
+     .                                     + ci * eta + di * zeta * eta 
+     
+                           end if 			
+						   	
+			   		
+			   if (upara0 .ne. 0.0)then
+			
+			      dfdupar(ni, mi) = dfdupar0_intplt * 
+     .                           upara(mi) / upara0
+     
+                              dfduper(ni, mi) = dfduper0_intplt * 
+     .                           sqrt(bratio) + dfdupar0_intplt * 
+     .                           uperp(ni) / upara0 * (1.0 - bratio)
+     
+c     			      dfdth = upara(mi) * dfduper(ni, mi)
+c     .                             - uperp(ni) * dfdupar(ni, mi)
+     
+                           end if
+			   
+			end if
+			
+			
+		        go to 5000			
+!                       ----------------------------
+!                       optional analytic Maxwellian
+!                       ----------------------------
+		     		        
+			alpha = sqrt(2.0 * xkt(i, j, k) / xm)
+!                        vc_mks = 3.5 * alpha
+                        u0 = vc_mks / alpha
+		     
+	                fnorm = u0**3 / pi**1.5 
+			   
+		        u2 = uperp(ni)**2 + upara(mi)**2
+		     
+                        f_cql = exp(-u2 * u0**2) * fnorm
+	                dfduper(ni, mi) = -f_cql * 2.* uperp(ni) * u0**2
+                        dfdupar(ni, mi) = -f_cql * 2.* upara(mi) * u0**2
+ 5000                   continue			
+						
+			
+                     end do
+                  end do
                end if
             end if
 	
@@ -468,37 +569,37 @@ c      factvol2d = 0.0
 !              Loop over parallel velocities
 !              -----------------------------
 
-c$$$               upara_test = sqrt(1.0 - (UPERP(ni))**2)
-c$$$	       mi_max = ceiling(upara_test*(nupar-1)/2 + (nupar+1)/2)
-c$$$	       mi_min = floor(-1.0*upara_test*(nupar-1)/2
-c$$$     .                        + (nupar+1)/2)
-c$$$
-c$$$               do mi = 1, nupar
-c$$$	       
-c$$$	          bql = 0.0 
-c$$$                  cql = 0.0
-c$$$                  eql = 0.0
-c$$$                  fql = 0.0
-c$$$
-c$$$	          if(mi.ge.mi_min .and. mi.le.mi_max)then
-c$$$
-c$$$                  bql = 1.0 / (8. * emax * dupara)
-c$$$     .                  * eps0 * omgp2(i,j,k) / omgrf * real(b_sum(mi))
-c$$$
-c$$$                  cql = 1.0 / (8. * emax * dupara)
-c$$$     .                  * eps0 * omgp2(i,j,k) / omgrf * real(c_sum(mi))
-c$$$
-c$$$                  eql = 1.0 / (8. * emax * dupara)
-c$$$     .                  * eps0 * omgp2(i,j,k) / omgrf * real(e_sum(mi))
-c$$$
-c$$$                  fql = 1.0 / (8. * emax * dupara)
-c$$$     .                  * eps0 * omgp2(i,j,k) / omgrf * real(f_sum(mi))
-c$$$
-c$$$
-c$$$
-c$$$!                  if(bql .ne. 0.0)count(myid, 1) = count(myid, 1) + 1.0
-c$$$		     
-c$$$		     
+               upara_test = sqrt(1.0 - (UPERP(ni))**2)
+	       mi_max = ceiling(upara_test*(nupar-1)/2 + (nupar+1)/2)
+	       mi_min = floor(-1.0*upara_test*(nupar-1)/2
+     .                        + (nupar+1)/2)
+
+               do mi = 1, nupar
+	       
+	          bql = 0.0 
+                  cql = 0.0
+                  eql = 0.0
+                  fql = 0.0
+
+	          if(mi.ge.mi_min .and. mi.le.mi_max)then
+
+                  bql = 1.0 / (8. * emax * dupara)
+     .                  * eps0 * omgp2(i,j,k) / omgrf * real(b_sum(mi))
+
+                  cql = 1.0 / (8. * emax * dupara)
+     .                  * eps0 * omgp2(i,j,k) / omgrf * real(c_sum(mi))
+
+                  eql = 1.0 / (8. * emax * dupara)
+     .                  * eps0 * omgp2(i,j,k) / omgrf * real(e_sum(mi))
+
+                  fql = 1.0 / (8. * emax * dupara)
+     .                  * eps0 * omgp2(i,j,k) / omgrf * real(f_sum(mi))
+
+
+
+!                  if(bql .ne. 0.0)count(myid, 1) = count(myid, 1) + 1.0
+		     
+		     
 c$$$                  if(n .le. nnoderho)then
 c$$$		     
 c$$$*                    ----------------------
@@ -565,19 +666,19 @@ c$$$
 c$$$
 c$$$		  end if
 c$$$
-c$$$                  else
-c$$$                  endif
-c$$$
-c$$$                  if(ndist.eq.1)then
-c$$$		  
-c$$$                    bql_store(ip,ni,mi) = bql
-c$$$	    	    cql_store(ip,ni,mi) = cql
-c$$$		    eql_store(ip,ni,mi) = eql
-c$$$		    fql_store(ip,ni,mi) = fql
-c$$$		  endif
-c$$$
-c$$$   
-c$$$               end do
+                  else
+                  endif
+
+                  if(i_write.ne.0)then
+		  
+                    bql_store(ip,ni,mi) = bql
+	    	    cql_store(ip,ni,mi) = cql
+		    eql_store(ip,ni,mi) = eql
+		    fql_store(ip,ni,mi) = fql
+		  endif
+
+   
+               end do
 
             end do
 
@@ -635,8 +736,16 @@ c$$$               end do
 
          if(iam_root)then
 	 
-           open(unit=43,file='out_orbitrf.coef',  status='replace',
-     .                                             form='formatted')
+           vc(:, :, :) = vc_mks
+
+           open(unit=43,file='out_orbitrf.coef',  status='old',
+     .          form='formatted', position='append')
+
+           write(43,309) nuper, nupar
+           write(43,3310) (uperp(ni), ni = 1, nuper)
+           write(43,3310) (upara(mi), mi = 1, nupar) 
+           write(43,3310) (((vc(i,j,k),i=1,nnodex),j=1,nnodey),
+     .                     k=1,nnodephi)
 	 
 	   do ip=start,finish
 	      i=i_table(ip)
@@ -646,7 +755,7 @@ c$$$               end do
 	        do mi=1,nupar
 		  if(abs(bql_store(ip,ni,mi)) .gt. 10**(-10)) then
 
-		     write(43,102) i, j, ni, mi,
+		     write(43,102) i, j, k, ni, mi,
      .                 bql_store(ip,ni,mi), cql_store(ip,ni,mi),
      .                 eql_store(ip,ni,mi), fql_store(ip,ni,mi)
 	          endif
@@ -671,11 +780,12 @@ c$$$               end do
 	   do ip=start,finish
 	      i=i_table(ip)
 	      j=j_table(ip)
+              k=k_table(ip)
 	      do ni=1,nuper
 	        do mi=1,nupar
 		  if(abs(bql_store(ip,ni,mi)) .gt. 10**(-10)) then
 
-		     write(43,102) i, j, ni, mi,
+		     write(43,102) i, j, k, ni, mi,
      .                 bql_store(ip,ni,mi), cql_store(ip,ni,mi),
      .                 eql_store(ip,ni,mi), fql_store(ip,ni,mi)
 	          endif
@@ -803,8 +913,9 @@ c$$$
 c$$$      deallocate(fqlvol)
 c$$$      deallocate(fqlvol2d)
       
-      if(ndist.eq.1) then
+      if(i_write.ne.0) then
          deallocate(bql_store, cql_store, eql_store,  fql_store)
+         deallocate(vc)
       endif
 
       wdot_inout(1:nnodex,1:nnodey,1:nnodephi)
@@ -830,7 +941,9 @@ c$$$      deallocate(fqlvol2d)
  1311 format(1p9e12.4)
   100 format (1p8e12.4)
   101 format (1i6, 1p8e12.4)
-  102 format (4i6, 1p8e12.4)
+  102 format (5i6, 1p8e12.4)
+  309 format(10i10)
+ 3310 format(1p6e18.10)
 
       end subroutine ql_myra_write
 

@@ -810,7 +810,7 @@
 
     real  uxx, uxy, uxz, uyx, uyy, uyz, uzx, uzy, uzz
     real  xkphi, sinth, factc, facte, factf, sinth_inv
-    real  xkxsav(nkdim1 : nkdim2), xkysav(mkdim1 : mkdim2), xkzsav(nphi1 : nphi2)
+    real  xkxsav(nkdim1 : nkdim2), xkysav(mkdim1 : mkdim2), xkzsav(nphidim1 : nphidim2)
     real  xkperpn, xkperpni, xkrhon, xketan, xkprln, beta
     real, intent(IN):: W, ZSPEC, ASPEC, BMAG
     real, intent(IN):: ENORM, UPARMIN, UPARMAX
@@ -892,7 +892,7 @@
     real, parameter:: EOVERAMU=9.64853e7
     real, parameter:: EOVERMH = 9.58084e+07
     
-    real, parameter:: MPC2 = 938271998.38
+    real, parameter:: MPC2 = 9.3807572e8!938271998.38
     real, parameter:: C = 2.99792458e8
     real, parameter:: PI = 3.141592653597932384
     real :: cosbeta_n_m, sinbeta_n_m
@@ -1399,8 +1399,11 @@
 	  i_uprl = i
           p = (UPAR0 - UPAR(i)) * dui
 		
-	  dfduper0 = dfduper(k_uper, NUPAR)
-          if (i .ne. NUPAR) then
+          if (i .lt. 1) then
+             dfduper0 = dfduper(k_uper, 1)
+          else if (i .gt. NUPAR) then
+             dfduper0 = dfduper(k_uper, NUPAR)
+          else
              dfduper0 = dfduper(k_uper, i) + (dfduper(k_uper, i+1) - dfduper(k_uper, i)) * p
           end if
 		

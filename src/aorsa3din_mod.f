@@ -74,8 +74,12 @@ c-----      if(iez.eq.1) Ez is set to zero
       real :: xnlim = 0.0000E+00          !-----electron density in scrape-off region (x>aplasm)
       real :: te0 = 4.2900E+03            !-----central value of eletron temperature in eV
       real :: ti0 = 7.0700E+03            !-----central value of ion temperature in eV
+      real :: ti02 = 7.0700E+03
+      real :: ti03 = 7.0700E+03
       real :: telim = 0.0000E+00          !-----electron temperature in scrape-off region (x>aplasm)
       real :: tilim = 0.0000E+00          !-----ion temperature in scrape-off region (x>aplasm)
+      real :: ti2lim = 0.0000E+00
+      real :: ti3lim = 0.0000E+00
       integer :: iprofile = 1             !-----iprofile:  if (iprofile .eq. 1) generic profiles (Gaussian) (default)
                                           !-----           if (iprofile .eq. 2) generic profiles (parabolas)
                                           !-----           if (iprofile .eq. 3) fits of form (1 - rho**beta)**alpha
@@ -84,9 +88,13 @@ c-----      if(iez.eq.1) Ez is set to zero
       real :: alphan = 1.0
       real :: alphate = 1.0
       real :: alphati = 1.0
+      real :: alphati2 = 1.0
+      real :: alphati3 = 1.0
       real :: betan = 1.0
       real :: betate = 1.0
       real :: betati = 1.0
+      real :: betati2 = 2.0
+      real :: betati3 = 2.0
 
       real :: b0 = 2.0                    !-----value of magnetic field at x=0 in Tesla
       real :: q0 = 1.0                    !-----value of inverse rotational transform on axis
@@ -248,6 +256,7 @@ c-----    For black background set ibackground = 1 (box is red)
                                           !-----                 over nzeta_wdot grid points (default is 51)
       integer :: i_sav = 0
       integer :: j_sav = 0      
+      integer :: k_sav = 0
 
       integer :: ftrap = 1                !-----ftrap = integer flag determining whether trapped particles effect current drive
                                           !        if(ftrap.eq.0) no trapped particles
@@ -262,7 +271,7 @@ c-----    For black background set ibackground = 1 (box is red)
      .    ibessel, mhel, lhel, nfp, mcap, mcap_number,
      .    acoil, kplot, nplot, mplot, nphiplot, idiag, jdiag, kdiag,
      .    dthetant0, dphiant0, dpsiant0,
-     .    ti0, xnuead, xnu1ad, xnu2ad, rant, te0, yant,
+     .    ti0, ti02, ti03, xnuead, xnu1ad, xnu2ad, rant, te0, yant,
      .    inu, iprint, iexact, delta0, xwall, xnwall,
      .    iroot, iequat, igeom, epszet, phistart,
      .    iqx, izfunc, iez, nprow, npcol,
@@ -270,14 +279,15 @@ c-----    For black background set ibackground = 1 (box is red)
      .    b0, rt, xnurf, aplasm, xnlim, signbz,
      .    xn0, flat, b1rat, b2rat, curdnx, curdny, curdnz,
      .    nstep, nabs, xnuabs, xbnch, xleft, xright,
-     .    isigma, itemp, telim, tilim,
+     .    isigma, itemp, telim, tilim, ti2lim, ti3lim,
      .    nfreqm, dfreq, nkzm, dkz,
      .    idens, r0, xnudip, adip, efold,
      .    amu3, z3, eta3, xnu3ad,
      .    xdelta, wdelta, xdelt2, wdelt2, zeffcd,
      .    rzoom1, rzoom2, ibackground, iabsorb, q0, prfin,
      .    nzfun, alim, grad, qavg0, nnodecx, nnodecy, nnodecphi, ymax,
-     .    alphan, alphate, alphati, betan, betate, betati,
+     .    alphan, alphate, alphati, alphati2, alphati3, betan, betate,
+     .    betati, betati2, betati3,
      .    ekappa, rwleft, rwright, ytop, ybottom,
      .    nphiant, iexpnd, icurve, xnuomg, psilim, psiant, psiplasm,
      .    nstrap, iflag_gammab, theta_ant,

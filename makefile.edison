@@ -82,7 +82,7 @@ $(OBJ_DIR)/cauchy_ppart.o:   $(SRC_DIR)/cauchy_ppart.f $(INC_FILES)
 	                     $(COMPILE90) -o $(OBJ_DIR)/cauchy_ppart.o \
                              $(SRC_DIR)/cauchy_ppart.f	
 
-$(OBJ_DIR)/vlog.o:           $(SRC_DIR)/vlog.f $(INCFILES)
+$(OBJ_DIR)/vlog.o:           $(SRC_DIR)/vlog.f $(INC_FILES)
 		             $(COMPILE) -o $(OBJ_DIR)/vlog.o \
 			     $(SRC_DIR)/vlog.f
 

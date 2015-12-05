@@ -154,7 +154,7 @@ c
 c***************************************************************************
 c
 
-      subroutine sigmad_cql3d(i, j, n, m, rho, rho_a,
+      subroutine sigmad_cql3d(i, j, k, n, m, rho, rho_a,
      .   gradprlb, bmod, bmod0,
      .   xm, q, xn, xnuomg,
      .   xkt, omgc, omgp2,
@@ -172,7 +172,7 @@ c
      .   UminPara, UmaxPara, UPERP, UPARA,
      .   vc_mks, df_cql_uprp, df_cql_uprl, nbessj,
      .   nkperp, zi, eps0, v0i, omgrf, xk0, kperp_max,
-     .   i_sav, j_sav, upshift, damping, xkx_cutoff, xky_cutoff,
+     .   i_sav, j_sav, k_sav, upshift, damping, xkx_cutoff, xky_cutoff,
      .   xkz_cutoff, rt, nkx2, nky2)
 
 
@@ -187,8 +187,8 @@ c
       real, dimension(:,:), allocatable :: DFDUPER0, DFDUPAR0
 
       integer lmin, lmax, nzfun, lmaxdim, l, labs, ibessel,
-     .    i, j, n, m, nphi, ndist, myid, iflag, nproc, ni, mi,
-     .    i_sav, j_sav, ni0, mi0, upshift, nkx2, nky2
+     .    i, j, k, n, m, nphi, ndist, myid, iflag, nproc, ni, mi,
+     .    i_sav, j_sav, k_sav, ni0, mi0, upshift, nkx2, nky2
       integer n_upper, n_lower, m_upper, m_lower     
       
      
@@ -488,7 +488,7 @@ c	  do l = 0, 0
 	 duperp = uperp(nuper) / (nuper - 1)
 	 dupara = 2.0 * upara(nupar) / (nupar - 1)
 
-         if(i .ne. i_sav .or. j .ne. j_sav)then
+         if(i .ne. i_sav .or. j .ne. j_sav .or. k .ne. k_sav)then
 	 
 	    dfduper0 = 0.0
 	    dfdupar0 = 0.0
@@ -630,6 +630,7 @@ c     .                           - uperp(ni) * dfdupar(ni, mi)
 
             i_sav = i
             j_sav = j
+            k_sav = k
 
          end if
 
@@ -697,7 +698,8 @@ c     .                           - uperp(ni) * dfdupar(ni, mi)
             
       if (xm .eq. xme) then
           kr = sqrt((xkxsav / xkx_cutoff)**2 
-     .              + (xkysav / xky_cutoff)**2)
+     .              + (xkysav / xky_cutoff)**2
+     .              + (xkzsav / xkz_cutoff)**2)
           step = damping * kr**16 / (1. + kr**16)
 	  
           sig3 = sig3 * (1.0 + step)
@@ -728,7 +730,6 @@ c      end if
             
  	      	 	      	      
       
-
 *     -----------------------------
 *     Swanson's rotation (original):
 *     -----------------------------
