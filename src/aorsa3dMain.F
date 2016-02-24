@@ -129,6 +129,26 @@
       real, dimension(:,:,:), allocatable :: df3_cql_uprp
       real, dimension(:,:,:), allocatable :: df3_cql_uprl
 
+      real, dimension(:,:,:), allocatable :: bqlavg_e
+      real, dimension(:,:,:), allocatable :: cqlavg_e
+      real, dimension(:,:,:), allocatable :: eqlavg_e
+      real, dimension(:,:,:), allocatable :: fqlavg_e
+
+      real, dimension(:,:,:), allocatable :: bqlavg_i1
+      real, dimension(:,:,:), allocatable :: cqlavg_i1
+      real, dimension(:,:,:), allocatable :: eqlavg_i1
+      real, dimension(:,:,:), allocatable :: fqlavg_i1
+
+      real, dimension(:,:,:), allocatable :: bqlavg_i2
+      real, dimension(:,:,:), allocatable :: cqlavg_i2
+      real, dimension(:,:,:), allocatable :: eqlavg_i2
+      real, dimension(:,:,:), allocatable :: fqlavg_i2
+
+      real, dimension(:,:,:), allocatable :: bqlavg_i3
+      real, dimension(:,:,:), allocatable :: cqlavg_i3
+      real, dimension(:,:,:), allocatable :: eqlavg_i3
+      real, dimension(:,:,:), allocatable :: fqlavg_i3
+
       integer :: i_psi_eq
 
 c***  3-D arrays:
@@ -263,7 +283,9 @@ c***  3-D arrays:
 
       real rhon(nrhomax), drho, wdoti1avg(nrhomax), wdoti2avg(nrhomax),
      .     wdoti3avg(nrhomax), wdoteavg(nrhomax), wdotavg(nrhomax),
-     .     darea(nrhomax)
+     .     dvol(nrhomax), bmod_min(nrhomax)
+      real wdote_ql(nrhomax),  wdoti1_ql(nrhomax), wdoti2_ql(nrhomax),
+     .     wdoti3_ql(nrhomax)
       real xnavg(nrhomax), xn1avg(nrhomax), xn2avg(nrhomax),
      .     xn3avg(nrhomax)
       real xkteavg(nrhomax), xktiavg(nrhomax), xkti2avg(nrhomax),
@@ -441,7 +463,7 @@ c***  3-D arrays:
         integer :: num_org, num_new, niasize
         integer :: org_nrow, org_ncol, mmb, nnb
         integer :: new_nrow, new_ncol
-        integer :: num_inside, mm, ni, nn, iia, jja
+        integer :: num_inside, mm, ni, nn, iia, jja, niu, miu
 
         integer, dimension(:), allocatable :: new_to_org
         integer, dimension(:,:), allocatable :: niabegin_all
@@ -2010,12 +2032,28 @@ c     .               / rhonorm
 *     -----------------------
 *     Calculate bmod_mid(i,j,k)
 *     -----------------------
+      bmod_min = 0.0
       do i = 1, nnodex
          do j = 1, nnodey
             do k = 1, nnodephi
-               bmod_mid(i,j,k) = bmod(i,j,k)
-!            call midplane(i, j, bmod, bmod_mid(i,j), rho,
-!     .                nxmx, nymx, nnodex, nnodey, capr, rt, b0, jmid)
+               n = int(rho(i,j,k) / drho) + 1
+               if(n .ge. 1 .and. n .le. nnoderho)then
+                  if (bmod_min(n) .eq. 0.0
+     .                .or. bmod_min(n) .lt. bmod(i,j,k)) then
+                     bmod_min(n) = bmod(i,j,k)
+                  end if
+               end if
+            end do
+         end do
+      end do
+      bmod_mid = bmod
+      do i = 1, nnodex
+         do j = 1, nnodey
+            do k = 1, nnodephi
+               n = int(rho(i,j,k) / drho) + 1
+               if(n .ge. 1 .and. n .le. nnoderho)then
+                  bmod_mid(i,j,k) = bmod_min(n)
+               end if
             end do
          end do
       end do
@@ -2296,6 +2334,25 @@ c                 xkti2(i,j) = xkti3(i,j)
             write(15, 6836)eta3	    
 	 end if
       end if
+
+*     ----------------------------------------------
+*     Calculate the differential volume on half mesh:
+*     ----------------------------------------------
+
+      dvol  = 1.0e-05 
+           
+      do i = 1, nnodex
+         do j = 1, nnodey
+            do k = 1, nnodephi
+               n = int(rho(i,j,k) / drho) + 1
+               if(n .le. nnoderho)then
+                  dvol(n)  =  dvol(n) + dx * dy * dphi * capr(i) 
+               end if
+            end do
+         end do
+      end do
+
+      dldbavg = 1.0
 
 *     ------------------------
 *     Do flux surface averages:
@@ -4347,6 +4404,62 @@ c
 
       t1 = second1(dummy)
 
+!     -----------------
+!     allocate arrays
+!     -----------------
+
+      allocate( bqlavg_e(nuper, nupar, nnoderho) )
+      allocate( cqlavg_e(nuper, nupar, nnoderho) )
+      allocate( eqlavg_e(nuper, nupar, nnoderho) )
+      allocate( fqlavg_e(nuper, nupar, nnoderho) )
+      bqlavg_e = 0.0
+      cqlavg_e = 0.0
+      eqlavg_e = 0.0
+      fqlavg_e = 0.0
+
+
+      allocate( bqlavg_i1(nuper, nupar, nnoderho) )
+      allocate( cqlavg_i1(nuper, nupar, nnoderho) )
+      allocate( eqlavg_i1(nuper, nupar, nnoderho) )
+      allocate( fqlavg_i1(nuper, nupar, nnoderho) )
+      bqlavg_i1 = 0.0
+      cqlavg_i1 = 0.0
+      eqlavg_i1 = 0.0
+      fqlavg_i1 = 0.0
+      
+c$$$      allocate( bqlavg_work(nuper, nupar, nnoderho) )
+c$$$      allocate( cqlavg_work(nuper, nupar, nnoderho) )
+c$$$      allocate( eqlavg_work(nuper, nupar, nnoderho) )
+c$$$      allocate( fqlavg_work(nuper, nupar, nnoderho) )
+c$$$      bqlavg_work = 0.0
+c$$$      cqlavg_work = 0.0
+c$$$      eqlavg_work = 0.0
+c$$$      fqlavg_work = 0.0        
+      
+      
+      if(eta2 .ne. 0.0)then
+         allocate( bqlavg_i2(nuper, nupar, nnoderho) )
+         allocate( cqlavg_i2(nuper, nupar, nnoderho) )
+         allocate( eqlavg_i2(nuper, nupar, nnoderho) )
+         allocate( fqlavg_i2(nuper, nupar, nnoderho) )
+         bqlavg_i2 = 0.0
+         cqlavg_i2 = 0.0
+         eqlavg_i2 = 0.0
+         fqlavg_i2 = 0.0
+      end if
+
+      if(eta3 .ne. 0.0)then
+         allocate( bqlavg_i3(nuper, nupar, nnoderho) )
+         allocate( cqlavg_i3(nuper, nupar, nnoderho) )
+         allocate( eqlavg_i3(nuper, nupar, nnoderho) )
+         allocate( fqlavg_i3(nuper, nupar, nnoderho) )
+         bqlavg_i3 = 0.0
+         cqlavg_i3 = 0.0
+         eqlavg_i3 = 0.0
+         fqlavg_i3 = 0.0
+      end if
+
+
       if (nzeta_wdot .gt. 0) then
         if (myid .eq. 0 .and. i_write .ne. 0) then
            open(unit=43,file='out_orbitrf.coef',  status='replace',
@@ -4362,9 +4475,9 @@ c
       ! --  Electrons   -- !
       ! ------------------ !
 
-      call ql_myra_write(!bqlavg_e, cqlavg_e, eqlavg_e, fqlavg_e, 
-     .   wdote, fx0e, fy0e, fz0e, darea, nrhomax, nnoderho, drho,
-     .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
+      call ql_myra_write(bqlavg_e, cqlavg_e, eqlavg_e, fqlavg_e, 
+     .   wdote, fx0e, fy0e, fz0e, dvol, nrhomax, nnoderho, drho,
+     .   dx, dy, dphi, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
      .   xme, qe, xnea, xkte, omgce, omgpe2, lmax,
@@ -4392,9 +4505,9 @@ c
       ! --Majority ions -- !
       ! ------------------ !
 
-      call ql_myra_write(!bqlavg_i1, cqlavg_i1, eqlavg_i1, fqlavg_i1, 
-     .   wdoti1, fx0i1, fy0i1, fz0i1, darea, nrhomax, nnoderho, drho,
-     .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
+      call ql_myra_write(bqlavg_i1, cqlavg_i1, eqlavg_i1, fqlavg_i1, 
+     .   wdoti1, fx0i1, fy0i1, fz0i1, dvol, nrhomax, nnoderho, drho,
+     .   dx, dy, dphi, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
      .   xmi1, qi1, xn1a, xkti, omgci1, omgp12, lmax,
@@ -4421,9 +4534,9 @@ c
       ! ------------------ !
 
       if(eta2 .ne. 0.0)then
-      call ql_myra_write(!bqlavg_i2, cqlavg_i2, eqlavg_i2, fqlavg_i2, 
-     .   wdoti2, fx0i2, fy0i2, fz0i2, darea, nrhomax, nnoderho, drho,
-     .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
+      call ql_myra_write(bqlavg_i2, cqlavg_i2, eqlavg_i2, fqlavg_i2, 
+     .   wdoti2, fx0i2, fy0i2, fz0i2, dvol, nrhomax, nnoderho, drho,
+     .   dx, dy, dphi, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
      .   xmi2, qi2, xn2a, xkti2, omgci2, omgp22, lmax,
@@ -4451,9 +4564,9 @@ c
       ! --------------------- !
 
       if(eta3 .ne. 0.0)then
-      call ql_myra_write(!bqlavg_i3, cqlavg_i3, eqlavg_i3, fqlavg_i3, 
-     .   wdoti3, fx0i3, fy0i3, fz0i3, darea, nrhomax, nnoderho, drho,
-     .   dx, dy, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
+      call ql_myra_write(bqlavg_i3, cqlavg_i3, eqlavg_i3, fqlavg_i3, 
+     .   wdoti3, fx0i3, fy0i3, fz0i3, dvol, nrhomax, nnoderho, drho,
+     .   dx, dy, dphi, rt, nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, nkdim1, nkdim2,
      .   mkdim1, mkdim2, lkdim1, lkdim2,
      .   xmi3, qi3, xn3a, xkti3, omgci3, omgp32, lmax,
@@ -4487,71 +4600,71 @@ c
 
       t1 = second1(dummy)
 
-c$$$      ! ------------------ !
-c$$$      ! --  Electrons   -- !
-c$$$      ! ------------------ !
-c$$$
-c$$$      call wdot_qlcheck(wdote_ql,
-c$$$     .   nnoderho, nrhomax,
-c$$$     .   bqlavg_e, cqlavg_e, xme, omgrf, xkteavg, 0,
-c$$$     .   nupar, nuper, n_psi,
-c$$$     .   n_psi_dim, dfdupere, dfdupare,
-c$$$     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
-c$$$     .   vce_mks, dfe_cql_uprp, dfe_cql_uprl, rhon, rho_a, myid, 
-c$$$     .   dldbavg)
-c$$$
-c$$$
-c$$$
-c$$$      ! ------------------ !
-c$$$      ! --Majority ions -- !
-c$$$      ! ------------------ !
-c$$$
-c$$$      call wdot_qlcheck(wdoti1_ql, 
-c$$$     .   nnoderho, nrhomax,
-c$$$     .   bqlavg_i1, cqlavg_i1, xmi1, omgrf, xktiavg, ndisti1,
-c$$$     .   nupar, nuper, n_psi,
-c$$$     .   n_psi_dim, dfduper1, dfdupar1,
-c$$$     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
-c$$$     .   vc1_mks, df1_cql_uprp, df1_cql_uprl, rhon, rho_a, myid, 
-c$$$     .   dldbavg)
-c$$$
-c$$$
-c$$$
-c$$$      ! ------------------ !
-c$$$      ! --Minority ions -- !
-c$$$      ! ------------------ !
-c$$$
-c$$$      if(eta2 .ne. 0.0)then
-c$$$
-c$$$      call wdot_qlcheck(wdoti2_ql, 
-c$$$     .   nnoderho, nrhomax,
-c$$$     .   bqlavg_i2, cqlavg_i2, xmi2, omgrf, xkti2avg, ndisti2,
-c$$$     .   nupar, nuper, n_psi,
-c$$$     .   n_psi_dim, dfduper2, dfdupar2,
-c$$$     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
-c$$$     .   vc2_mks, df2_cql_uprp, df2_cql_uprl, rhon, rho_a, myid, 
-c$$$     .   dldbavg)
-c$$$
-c$$$      end if
-c$$$
-c$$$
-c$$$
-c$$$      ! --------------------- !
-c$$$      ! --Third ion species-- !
-c$$$      ! --------------------- !
-c$$$
-c$$$      if(eta3 .ne. 0.0)then
-c$$$
-c$$$      call wdot_qlcheck(wdoti3_ql, 
-c$$$     .   nnoderho, nrhomax,
-c$$$     .   bqlavg_i3, cqlavg_i3, xmi3, omgrf, xkti3avg, ndisti3,
-c$$$     .   nupar, nuper, n_psi,
-c$$$     .   n_psi_dim, dfduper3, dfdupar3,
-c$$$     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
-c$$$     .   vc3_mks, df3_cql_uprp, df3_cql_uprl, rhon, rho_a, myid, 
-c$$$     .   dldbavg)
-c$$$
-c$$$      end if
+      ! ------------------ !
+      ! --  Electrons   -- !
+      ! ------------------ !
+
+      call wdot_qlcheck(wdote_ql,
+     .   nnoderho, nrhomax,
+     .   bqlavg_e, cqlavg_e, xme, omgrf, xkteavg, ndiste,
+     .   nupar, nuper, n_psi,
+     .   n_psi_dim, dfdupere, dfdupare,
+     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+     .   vce_mks, dfe_cql_uprp, dfe_cql_uprl, rhon, rho_a, myid, 
+     .   dldbavg)
+
+
+
+      ! ------------------ !
+      ! --Majority ions -- !
+      ! ------------------ !
+
+      call wdot_qlcheck(wdoti1_ql, 
+     .   nnoderho, nrhomax,
+     .   bqlavg_i1, cqlavg_i1, xmi1, omgrf, xktiavg, ndisti1,
+     .   nupar, nuper, n_psi,
+     .   n_psi_dim, dfduper1, dfdupar1,
+     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+     .   vc1_mks, df1_cql_uprp, df1_cql_uprl, rhon, rho_a, myid, 
+     .   dldbavg)
+
+
+
+      ! ------------------ !
+      ! --Minority ions -- !
+      ! ------------------ !
+
+      if(eta2 .ne. 0.0)then
+
+      call wdot_qlcheck(wdoti2_ql, 
+     .   nnoderho, nrhomax,
+     .   bqlavg_i2, cqlavg_i2, xmi2, omgrf, xkti2avg, ndisti2,
+     .   nupar, nuper, n_psi,
+     .   n_psi_dim, dfduper2, dfdupar2,
+     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+     .   vc2_mks, df2_cql_uprp, df2_cql_uprl, rhon, rho_a, myid, 
+     .   dldbavg)
+
+      end if
+
+
+
+      ! --------------------- !
+      ! --Third ion species-- !
+      ! --------------------- !
+
+      if(eta3 .ne. 0.0)then
+
+      call wdot_qlcheck(wdoti3_ql, 
+     .   nnoderho, nrhomax,
+     .   bqlavg_i3, cqlavg_i3, xmi3, omgrf, xkti3avg, ndisti3,
+     .   nupar, nuper, n_psi,
+     .   n_psi_dim, dfduper3, dfdupar3,
+     .   UminPara, UmaxPara, UPERP, UPARA, UPERP_work, UPARA_work,
+     .   vc3_mks, df3_cql_uprp, df3_cql_uprl, rhon, rho_a, myid, 
+     .   dldbavg)
+
+      end if
 
       end if
 
@@ -4659,6 +4772,9 @@ c
      .   capr, nxmx, nymx, nphimx)
 
 
+*     ------------------
+*     Normalize to jdote:
+*     ------------------
       powtot = ptot
 
       if (powtot .ne. 0.0) pscale = prfin / powtot
@@ -4672,16 +4788,18 @@ c
          write(15, 1218) pscale
       end if
 
-c
-c--   Scale powers to Prf,in:
-c
+*     -----------------------
+*     Scale powers to Prf,in:
+*     -----------------------
       powtot = powtot * pscale
       ptot = ptot * pscale
       pcrto2 = pcrto2 * pscale
       pcito2 = pcito2 * pscale
       ptot_wdot = ptot_wdot * pscale
 
-c--   Scale fields and current to Prf, in:
+*     ------------------------------------
+*     Scale fields and current to Prf, in:
+*     ------------------------------------
 
       do n = nkx1, nkx2
          do m = nky1, nky2
@@ -4754,9 +4872,60 @@ c               fyp(i,j)  = fyp(i,j)  * pscale
             end do
          end do
       end do
-c
-c--calculate individual species edotj's on solution mesh
-c
+
+      do n = 1, nnoderho
+         wdote_ql(n)  = wdote_ql(n)  * pscale
+         wdoti1_ql(n) = wdoti1_ql(n) * pscale
+         wdoti2_ql(n) = wdoti2_ql(n) * pscale
+         wdoti3_ql(n) = wdoti3_ql(n) * pscale
+
+         do niu = 1, nuper
+            do miu = 1, nupar
+
+               bqlavg_e(niu, miu, n) = bqlavg_e(niu, miu, n) * pscale
+               cqlavg_e(niu, miu, n) = cqlavg_e(niu, miu, n) * pscale
+               eqlavg_e(niu, miu, n) = eqlavg_e(niu, miu, n) * pscale
+               fqlavg_e(niu, miu, n) = fqlavg_e(niu, miu, n) * pscale
+
+
+               bqlavg_i1(niu, miu, n) = bqlavg_i1(niu, miu, n) * pscale
+               cqlavg_i1(niu, miu, n) = cqlavg_i1(niu, miu, n) * pscale
+               eqlavg_i1(niu, miu, n) = eqlavg_i1(niu, miu, n) * pscale
+               fqlavg_i1(niu, miu, n) = fqlavg_i1(niu, miu, n) * pscale
+
+               if(eta2 .ne. 0.0)then
+               bqlavg_i2(niu, miu, n) = bqlavg_i2(niu, miu, n) * pscale
+               cqlavg_i2(niu, miu, n) = cqlavg_i2(niu, miu, n) * pscale
+               eqlavg_i2(niu, miu, n) = eqlavg_i2(niu, miu, n) * pscale
+               fqlavg_i2(niu, miu, n) = fqlavg_i2(niu, miu, n) * pscale
+	       end if
+	       
+	       if(eta3 .ne. 0.0)then	       
+	       bqlavg_i3(niu, miu, n) = bqlavg_i3(niu, miu, n) * pscale
+               cqlavg_i3(niu, miu, n) = cqlavg_i3(niu, miu, n) * pscale
+               eqlavg_i3(niu, miu, n) = eqlavg_i3(niu, miu, n) * pscale
+               fqlavg_i3(niu, miu, n) = fqlavg_i3(niu, miu, n) * pscale
+	       end if
+	                	                    
+
+            end do
+         end do
+	 
+      end do
+
+      tmin = (second1(dummy) - t1) / 60.
+      if (myid.eq.0) then
+         write(6 , 2841) tmin
+         write(15, 2841) tmin
+      endif
+      
+ 2841 format('time to do power scaling =', f9.3, ' min')
+
+
+      t1 = second1(dummy)      
+*     ------------------------------------------------------------------------
+*     calculate individual species edotj's and driven current on solution mesh
+*     ------------------------------------------------------------------------
 
       do k = 1, nnodephi
          do i = 1, nnodex
@@ -4790,9 +4959,9 @@ c
       end do
 
 
-
-c-- Integrate individual species Estar dot J on solution mesh:
-
+*     ----------------------------------------------------------
+*     Integrate individual species Estar dot J on solution mesh:
+*     ----------------------------------------------------------
 
       call torint(x, y, phi, redotje, pedotje,
      .   1, nnodex, 1, nnodey, 1, nnodephi,
@@ -5180,6 +5349,9 @@ c         close(29)
 
 	 close (39)
 
+*        -------------------
+*        write fpm (34) file
+*        -------------------
          if (imcap .eq. 1) then
             write(34, 309) mcap_number
 
@@ -5223,6 +5395,11 @@ c         close(29)
          write(34, 310) (wdoti1avg(n), n = 1, nnoderho)
          write(34, 310) (wdoti2avg(n), n = 1, nnoderho)
          write(34, 310) (wdoti3avg(n), n = 1, nnoderho)
+
+	 write(34, 310) (wdote_ql(n),  n = 1, nnoderho)
+         write(34, 310) (wdoti1_ql(n), n = 1, nnoderho)
+         write(34, 310) (wdoti2_ql(n), n = 1, nnoderho)
+         write(34, 310) (wdoti3_ql(n), n = 1, nnoderho)
       end if
 
   310 format(1p6e12.4)
@@ -5549,6 +5726,34 @@ c         close(29)
 	 deallocate( dfduper3 )
          deallocate( dfdupar3 )
 
+         deallocate( bqlavg_e )
+         deallocate( cqlavg_e )
+         deallocate( eqlavg_e )
+         deallocate( fqlavg_e )
+	 
+c$$$         deallocate( bqlavg_work )
+c$$$         deallocate( cqlavg_work )
+c$$$         deallocate( eqlavg_work )
+c$$$         deallocate( fqlavg_work )	 
+
+         deallocate( bqlavg_i1 )
+         deallocate( cqlavg_i1 )
+         deallocate( eqlavg_i1 )
+         deallocate( fqlavg_i1 )
+
+         if(eta2 .ne. 0.0) then 
+            deallocate( bqlavg_i2 )
+            deallocate( cqlavg_i2 )
+            deallocate( eqlavg_i2 )
+            deallocate( fqlavg_i2 )
+	 end if
+
+         if(eta3 .ne. 0.0) then 
+	    deallocate( bqlavg_i3 )
+            deallocate( cqlavg_i3 )
+            deallocate( eqlavg_i3 )
+            deallocate( fqlavg_i3 )
+	 end if
       end if
 
       if(ndisti1   .ne. 0 .or.
@@ -5589,6 +5794,34 @@ c         close(29)
          deallocate( df3_cql_uprp )
          deallocate( df3_cql_uprl )	 	 		 
 
+         deallocate( bqlavg_e )
+         deallocate( cqlavg_e )
+         deallocate( eqlavg_e )
+         deallocate( fqlavg_e )
+	 
+c$$$         deallocate( bqlavg_work )
+c$$$         deallocate( cqlavg_work )
+c$$$         deallocate( eqlavg_work )
+c$$$         deallocate( fqlavg_work )	 
+
+         deallocate( bqlavg_i1 )
+         deallocate( cqlavg_i1 )
+         deallocate( eqlavg_i1 )
+         deallocate( fqlavg_i1 )
+
+         if(eta2 .ne. 0.0) then 
+            deallocate( bqlavg_i2 )
+            deallocate( cqlavg_i2 )
+            deallocate( eqlavg_i2 )
+            deallocate( fqlavg_i2 )
+	 end if
+
+         if(eta3 .ne. 0.0) then 
+	    deallocate( bqlavg_i3 )
+            deallocate( cqlavg_i3 )
+            deallocate( eqlavg_i3 )
+            deallocate( fqlavg_i3 )
+	 end if
       end if
 
       deallocate( mask )
