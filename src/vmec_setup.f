@@ -21,8 +21,8 @@ c
       integer mnmaxnyq
       integer mnyq(mnmaxnyq), nnyq(mnmaxnyq)
       real rhoh0(ns - 1)
-      real buc(mnmaxnyq, ns), bus(mnmaxnyq, ns),
-     .     bvc(mnmaxnyq, ns), bvs(mnmaxnyq, ns)
+      real buc(mnmaxnyq, ns - 1), bus(mnmaxnyq, ns - 1),
+     .     bvc(mnmaxnyq, ns - 1), bvs(mnmaxnyq, ns - 1)
       real rho, theta
       real br, bz, bphi
 
@@ -70,7 +70,7 @@ c
 
 !     search solution
       itr = 0
-      do while (1)
+      do while (.true.)
          f1 = 0.0               ! R
          f2 = 0.0               ! Z
          j11 = 0.0              ! dRdrho
@@ -216,7 +216,7 @@ c
 c***************************************************************************
 c
 
-      subroutine vmec_setup(myid, nproc, iwout, wout,
+      subroutine vmec_setup(icontxt, myid, nproc, iwout, wout,
      .     nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .     capr, y, phi, rwleft, rwright, ytop, ybottom, rt, b0,
      .     bxn, byn, bzn, bmod, psi, rho, thetap, nfp)
@@ -415,6 +415,8 @@ c
 
       do i = 1, ns
          rho0(i) = sqrt(real(i - 1) / (ns - 1))
+      end do
+      do i = 1, ns - 1
          rhoh0(i) = sqrt((i - 0.5) / (ns - 1))
       end do
 

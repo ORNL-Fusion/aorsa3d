@@ -714,19 +714,12 @@ c        integer, dimension(:,:,:), allocatable :: mask2
 *     ---------------------------------------------------------
       if(mcap_number .gt. 1) prfin = 0.0
 
-      if (myid.eq.0) then
-         open(unit=15,file='out15',status='unknown',form='formatted')
-
-         open(unit=34, file='fpm',status='unknown', form='formatted')	
-      endif
-
       idiag = nmodesx / 2
       jdiag = nmodesy / 2
       kdiag = nmodesphi / 2
 
       nbessj = lmax + 2
 
-      if (kplot .eq. 0) kplot = nnodephi / 2 + 1
 
 
 !       --------------------------
@@ -741,6 +734,13 @@ c        integer, dimension(:,:,:), allocatable :: mask2
 !         write(15,*) '** blacs_pinfo returns:myid,nproc',myid,nproc
          stop '** blacs not setup '
       endif
+
+      if (myid.eq.0) then
+         open(unit=15,file='out15',status='unknown',form='formatted')
+
+         open(unit=34, file='fpm',status='unknown', form='formatted')
+      endif
+
       call blacs_get(-1,0,icontxt)
 
 *     --------------------
@@ -827,6 +827,7 @@ c     .        form='formatted')
 
       ndkplot = nnodephi / 4
 
+      if (kplot .eq. 0) kplot = nnodephi / 2 + 1
 
 
 
@@ -1068,7 +1069,7 @@ c         write(15, 7017)rhoi10
 *     Stellarator flux surfaces from VMEC
 *     ------------------------------------
       if (igeom .eq. 5) then
-         call vmec_setup(myid, nproc, iwout, wout,
+         call vmec_setup(icontxt, myid, nproc, iwout, wout,
      .       nxmx, nymx, nphimx, nnodex, nnodey, nnodephi,
      .       capr, y, phi, rwleft, rwright, ytop, ybottom, rt, b0,
      .       bxn, byn, bzn, bmod, psi, rho, thetap, nfp)
@@ -2092,6 +2093,7 @@ c     .               / rhonorm
          write(6, *) "rant1 =", rant1
       end if
 
+      shapephi = 0.0
       do k = 1, nnodephi
          do i = 1, nstrap
             zstrap = (i - 1.0 - (nstrap - 1) / 2.0) * wd
@@ -2218,6 +2220,9 @@ c        allocate( mask2(1:nnodex,1:nnodey,1:nnodephi) )
 *     read profile data from the plasma state:
 *     ---------------------------------------
       if (iprofile .eq. 5) then
+         s_n_s = 0.0
+         s_t_s = 1.0e-3
+
          rewind (63)
          read(63, state)
 
@@ -4040,7 +4045,7 @@ c--   Operations for complex matrix factor and solve:
      .   nkx1, nkx2, nky1, nky2, nphi1, nphi2, xx, yy, zz,
      .   xmax, ymax, phimax, dx,dy, dphi)
 
-      if (anti_alias .eq. .true.) then
+      if (anti_alias) then
 *        --------------------------------------
 *        Anti-aliasing filter (two-thirds rule):
 *        --------------------------------------      
