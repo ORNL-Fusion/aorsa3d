@@ -2040,7 +2040,7 @@ c     .               / rhonorm
                n = int(rho(i,j,k) / drho) + 1
                if(n .ge. 1 .and. n .le. nnoderho)then
                   if (bmod_min(n) .eq. 0.0
-     .                .or. bmod_min(n) .lt. bmod(i,j,k)) then
+     .                .or. bmod(i,j,k) .lt. bmod_min(n)) then
                      bmod_min(n) = bmod(i,j,k)
                   end if
                end if
@@ -5375,6 +5375,20 @@ c         close(29)
             write(34, 309) nnoderho
             write(34, 310) (rhon(n), n = 1, nnoderho)
             write(34, 310) (xnavg(n), n = 1, nnoderho)
+
+            write(34, 309) nuper, nupar, nnoderho
+
+            write(34, 309) ndiste, ndisti1, ndisti2, ndisti3
+            if (ndiste .eq. 1) write(34, 3310) vce_mks
+            if (ndisti1 .eq. 1) write(34, 3310) vc1_mks
+            if (ndisti2 .eq. 1) write(34, 3310) vc2_mks
+            if (ndisti3 .eq. 1) write(34, 3310) vc3_mks
+
+            write(34, 3310) UminPara, UmaxPara
+
+            write(34, 3310) (rhon(n), n = 1, nnoderho)
+            write(34, 3310) (uperp(niu), niu = 1, nuper)
+            write(34, 3310) (upara(miu), miu = 1, nupar)
          endif
 
          write(34, 309) mcap(imcap)
@@ -5405,9 +5419,58 @@ c         close(29)
          write(34, 310) (wdoti1_ql(n), n = 1, nnoderho)
          write(34, 310) (wdoti2_ql(n), n = 1, nnoderho)
          write(34, 310) (wdoti3_ql(n), n = 1, nnoderho)
+
+         if(ndiste .eq. 1)then
+	    write (34, 3310) (((bqlavg_e(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((cqlavg_e(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((eqlavg_e(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((fqlavg_e(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) xme
+	 end if
+
+         if(ndisti1 .eq. 1)then
+	    write (34, 3310) (((bqlavg_i1(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((cqlavg_i1(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((eqlavg_i1(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((fqlavg_i1(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) xmi1
+	 end if
+
+	 if(ndisti2 .eq. 1 .and. eta2 .ne. 0.0)then
+	    write (34, 3310) (((bqlavg_i2(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((cqlavg_i2(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((eqlavg_i2(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((fqlavg_i2(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) xmi2
+	 end if
+
+	 if(ndisti3 .eq. 1 .and. eta3 .ne. 0.0)then
+	    write (34, 3310) (((bqlavg_i3(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((cqlavg_i3(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((eqlavg_i3(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) (((fqlavg_i3(niu, miu, n),
+     &        niu = 1, nuper), miu = 1, nupar), n = 1, nnoderho)
+            write (34, 3310) xmi2
+	 end if
       end if
 
   310 format(1p6e12.4)
+ 3310 format(1p6e18.10)
   309 format(10i10)
  9310 format(1p7e12.4)
   311 format(1p10e12.4)
